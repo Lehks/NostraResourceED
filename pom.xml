@@ -35,7 +35,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <mainClass>nostra.resourceed.ResourceED</mainClass>
+                    <mainClass>nostra.resourceed.gui.ResourceED</mainClass>
                 </configuration>
             </plugin>
         </plugins>

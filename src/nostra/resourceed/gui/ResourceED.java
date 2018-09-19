@@ -1,4 +1,4 @@
-package nostra.resourceed;
+package nostra.resourceed.gui;
 
 public class ResourceED
 {
