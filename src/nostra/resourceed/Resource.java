@@ -35,7 +35,7 @@ public class Resource
     
     public ReadOnlyIntegerProperty idProperty()
     {
-        return id;
+        return id.getReadOnlyProperty();
     }
     
     public String getPath()
