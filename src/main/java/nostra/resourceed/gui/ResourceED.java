@@ -2,9 +2,11 @@ package nostra.resourceed.gui;
 
 import nostra.resourceed.Database;
 import nostra.resourceed.Editor;
-import nostra.resourceed.Group;
-import nostra.resourceed.Resource;
-import nostra.resourceed.Type;
+import nostra.resourceed.Filter;
+import nostra.resourceed.GroupNameFilter;
+import nostra.resourceed.ResourceFileExtensionFilter;
+import nostra.resourceed.ResourcePathFilter;
+import nostra.resourceed.TypeNameFilter;
 
 public class ResourceED
 {
@@ -15,26 +17,18 @@ public class ResourceED
         
         Editor editor = new Editor(db);
         
-        Group group = editor.getGroup(1);
+        /*Filter filter = new TypeNameFilter("MyType")
+            .and(Filter.not(new ResourcePathFilter("Test")))
+            .andNot(new GroupNameFilter("Grp2").or(new GroupNameFilter("Grp3")));*/
         
-        group.setName("Grp1");
+        Filter filter = new ResourceFileExtensionFilter("txt");
         
-        Resource resource = editor.getResource(2);
+        System.out.println(editor.getResources(filter));
         
-        resource.setPath("ololol");
-        resource.setCached("rofl");
-        
-        resource.setType(2);
-        
-        Type type = resource.getType();
-        
-        type.setName("Typetypetype");
-        
-        System.out.println(type.getId());
-        
-        System.out.println(editor.getResources());
-        System.out.println(editor.getTypes());
-        System.out.println(editor.getGroups());
+//        System.out.println(editor.getResource(2).getGroups());
+//        System.out.println(editor.getResources());
+//        System.out.println(editor.getTypes());
+//        System.out.println(editor.getGroups());
     }
 
 }

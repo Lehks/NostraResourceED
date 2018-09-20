@@ -7,6 +7,13 @@ import java.util.List;
 
 public class Group
 {
+    /** Represents the Group Table name inside the database. */
+    public static final String SQL_TABLE = "resourceGroup";
+    /** Represents the Group Name column name inside the database. */
+    public static final String SQL_COL_NAME = "name";
+    /** Represents the Group Id column name inside the database. */
+    public static final String SQL_COL_ID = "gid";
+
     Editor editor;
     
     private final int id;
@@ -26,9 +33,9 @@ public class Group
     {
         QueryBuilder builder = new QueryBuilder(editor.getDatabase());
         
-        ResultSet result = builder.select(Editor.GROUP_NAME_COLUMN)
-                                    .from(Editor.GROUP_TABLE)
-                                    .where(Editor.GROUP_ID_COLUMN, getId())
+        ResultSet result = builder.select(SQL_COL_NAME)
+                                    .from(SQL_TABLE)
+                                    .where(SQL_COL_ID, getId())
                                     .executeQuery();
         
         try
@@ -61,10 +68,9 @@ public class Group
             throw new NullPointerException("The name must not be null.");
         
         QueryBuilder builder = new QueryBuilder(editor.getDatabase());
-        
-        int affectedRows = builder.update(Editor.GROUP_TABLE)
-                .set(Editor.GROUP_NAME_COLUMN, name)
-                .where(Editor.GROUP_ID_COLUMN, getId())
+                int affectedRows = builder.update(SQL_TABLE)
+                .set(SQL_COL_NAME, name)
+                .where(SQL_COL_ID, getId())
                 .executeUpdate();
         
         return affectedRows == 1; //can never be larger than 1, because selection is done through the primary key
@@ -79,9 +85,9 @@ public class Group
     {
         QueryBuilder builder = new QueryBuilder(editor.getDatabase());
         
-        ResultSet result = builder.select(Editor.GROUPED_RESOURCE_ID_COLLUMN)
-                                    .from(Editor.GROUPED_TABLE)
-                                    .where(Editor.GROUPED_GROUP_ID_COLLUMN, getId())
+        ResultSet result = builder.select(Editor.GROUPED_SQL_COL_RESOURCE_ID)
+                                    .from(Editor.GROUPED_SQL_TABLE)
+                                    .where(Editor.GROUPED_SQL_COL_GROUP_ID, getId())
                                     .executeQuery();
         
         try
@@ -110,9 +116,9 @@ public class Group
         QueryBuilder builder = new QueryBuilder(editor.getDatabase());
         
         //TODO: optimize with AND (WHERE groupID = id AND resourceID = resourceID)
-        ResultSet result = builder.select(Editor.GROUPED_RESOURCE_ID_COLLUMN)
-                                    .from(Editor.GROUPED_TABLE)
-                                    .where(Editor.GROUPED_GROUP_ID_COLLUMN, getId())
+        ResultSet result = builder.select(Editor.GROUPED_SQL_COL_RESOURCE_ID)
+                                    .from(Editor.GROUPED_SQL_TABLE)
+                                    .where(Editor.GROUPED_SQL_COL_GROUP_ID, getId())
                                     .executeQuery();
         
         try
@@ -157,8 +163,8 @@ public class Group
         
         int affectedRows = builder
                 .delete()
-                .from(Editor.GROUPED_TABLE)
-                .where(Editor.GROUPED_RESOURCE_ID_COLLUMN, resourceId)
+                .from(Editor.GROUPED_SQL_TABLE)
+                .where(Editor.GROUPED_SQL_COL_RESOURCE_ID, resourceId)
                 .executeUpdate();
 
         return affectedRows == 1; //can never be larger than 1, because selection is done through the primary key
@@ -174,9 +180,9 @@ public class Group
         QueryBuilder builder = new QueryBuilder(editor.getDatabase());
         
         int affectedRows = builder
-                .insert(Editor.GROUPED_TABLE)
-                .set(Editor.GROUPED_GROUP_ID_COLLUMN, getId())
-                .set(Editor.GROUPED_RESOURCE_ID_COLLUMN, resourceId)
+                .insert(Editor.GROUPED_SQL_TABLE)
+                .set(Editor.GROUPED_SQL_COL_GROUP_ID, getId())
+                .set(Editor.GROUPED_SQL_COL_RESOURCE_ID, resourceId)
                 .executeUpdate();
         
         return affectedRows == 1; //can never be larger than 1, because selection is done through the primary key

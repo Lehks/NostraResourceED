@@ -5,6 +5,13 @@ import java.sql.SQLException;
 
 public class Type
 {
+    /** Represents the Type table name inside the database. */
+    public static final String SQL_TABLE = "resourceType";
+    /** Represents the Type Id column name inside the database. */
+    public static final String SQL_COL_ID = "tid";
+    /** Represents the Type Name column name inside the database */
+    public static final String SQL_COL_NAME = "name";
+
     private Editor editor;
     
     private final int id;
@@ -24,9 +31,9 @@ public class Type
     {
         QueryBuilder builder = new QueryBuilder(editor.getDatabase());
         
-        ResultSet result = builder.select(Editor.TYPE_NAME_COLUMN)
-                                    .from(Editor.TYPE_TABLE)
-                                    .where(Editor.TYPE_ID_COLUMN, getId())
+        ResultSet result = builder.select(SQL_COL_NAME)
+                                    .from(SQL_TABLE)
+                                    .where(SQL_COL_ID, getId())
                                     .executeQuery();
         
         try
@@ -60,9 +67,9 @@ public class Type
         
         QueryBuilder builder = new QueryBuilder(editor.getDatabase());
         
-        int affectedRows = builder.update(Editor.TYPE_TABLE)
-                .set(Editor.TYPE_NAME_COLUMN, name)
-                .where(Editor.TYPE_ID_COLUMN, getId())
+        int affectedRows = builder.update(SQL_TABLE)
+                .set(SQL_COL_NAME, name)
+                .where(SQL_COL_ID, getId())
                 .executeUpdate();
         
         return affectedRows == 1; //can never be larger than 1, because selection is done through the primary key

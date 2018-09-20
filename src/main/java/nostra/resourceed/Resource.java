@@ -2,9 +2,23 @@ package nostra.resourceed;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Resource
 {
+    /** Represents the Resource Table name inside the database. */
+    public static final String SQL_TABLE = "resource";
+    /** Represents the Resource Id column name inside the database. */
+    public static final String SQL_COL_ID = "rid";
+    /** Represents the Resource Path column name inside the database. */
+    public static final String SQL_COL_PATH = "path";
+    /** Represents the Resource Cache column name inside the database. */
+    public static final String SQL_COL_CACHED = "cached";
+    /** Represents the Resource Type column name inside the database.  */
+    public static final String SQL_COL_TYPE = "type";
+
+    
     private Editor editor;
     
     private final int id;
@@ -24,9 +38,9 @@ public class Resource
     {
         QueryBuilder builder = new QueryBuilder(editor.getDatabase());
         
-        ResultSet result = builder.select(Editor.RESOURCE_PATH_COLUMN)
-                                    .from(Editor.RESOURCE_TABLE)
-                                    .where(Editor.RESOURCE_ID_COLUMN, getId())
+        ResultSet result = builder.select(SQL_COL_PATH)
+                                    .from(SQL_TABLE)
+                                    .where(SQL_COL_ID, getId())
                                     .executeQuery();
         
         try
@@ -60,9 +74,9 @@ public class Resource
         
         QueryBuilder builder = new QueryBuilder(editor.getDatabase());
         
-        int affectedRows = builder.update(Editor.RESOURCE_TABLE)
-                .set(Editor.RESOURCE_PATH_COLUMN, path)
-                .where(Editor.RESOURCE_ID_COLUMN, getId())
+        int affectedRows = builder.update(SQL_TABLE)
+                .set(SQL_COL_PATH, path)
+                .where(SQL_COL_ID, getId())
                 .executeUpdate();
         
         return affectedRows == 1; //can never be larger than 1, because selection is done through the primary key
@@ -72,9 +86,9 @@ public class Resource
     {
         QueryBuilder builder = new QueryBuilder(editor.getDatabase());
         
-        ResultSet result = builder.select(Editor.RESOURCE_CACHED_COLUMN)
-                                    .from(Editor.RESOURCE_TABLE)
-                                    .where(Editor.RESOURCE_ID_COLUMN, getId())
+        ResultSet result = builder.select(SQL_COL_CACHED)
+                                    .from(SQL_TABLE)
+                                    .where(SQL_COL_ID, getId())
                                     .executeQuery();
         
         try
@@ -108,9 +122,9 @@ public class Resource
         
         QueryBuilder builder = new QueryBuilder(editor.getDatabase());
         
-        int affectedRows = builder.update(Editor.RESOURCE_TABLE)
-                .set(Editor.RESOURCE_CACHED_COLUMN, cache)
-                .where(Editor.RESOURCE_ID_COLUMN, getId())
+        int affectedRows = builder.update(SQL_TABLE)
+                .set(SQL_COL_CACHED, cache)
+                .where(SQL_COL_ID, getId())
                 .executeUpdate();
         
         return affectedRows == 1; //can never be larger than 1, because selection is done through the primary key
@@ -120,9 +134,9 @@ public class Resource
     {
         QueryBuilder builder = new QueryBuilder(editor.getDatabase());
         
-        ResultSet result = builder.select(Editor.RESOURCE_TYPE_COLUMN)
-                                    .from(Editor.RESOURCE_TABLE)
-                                    .where(Editor.RESOURCE_ID_COLUMN, getId())
+        ResultSet result = builder.select(SQL_COL_TYPE)
+                                    .from(SQL_TABLE)
+                                    .where(SQL_COL_ID, getId())
                                     .executeQuery();
         
         try
@@ -157,9 +171,9 @@ public class Resource
     {
         QueryBuilder builder = new QueryBuilder(editor.getDatabase());
         
-        int affectedRows = builder.update(Editor.RESOURCE_TABLE)
-                .set(Editor.RESOURCE_TYPE_COLUMN, typeId)
-                .where(Editor.RESOURCE_ID_COLUMN, getId())
+        int affectedRows = builder.update(SQL_TABLE)
+                .set(SQL_COL_TYPE, typeId)
+                .where(SQL_COL_ID, getId())
                 .executeUpdate();
         
         return affectedRows == 1; //can never be larger than 1, because selection is done through the primary key
@@ -173,6 +187,81 @@ public class Resource
     public Editor getEditor()
     {
         return editor;
+    }
+    
+    public List<Group> getGroups()
+    {
+        QueryBuilder builder = new QueryBuilder(editor.getDatabase());
+        
+        ResultSet result = builder.select(Editor.GROUPED_SQL_COL_GROUP_ID)
+                                    .from(Editor.GROUPED_SQL_TABLE)
+                                    .where(Editor.GROUPED_SQL_COL_RESOURCE_ID, getId())
+                                    .executeQuery();
+        
+        try
+        {
+            List<Group> ret = new ArrayList<Group>();
+            
+            while(result.next())
+            {
+                ret.add(new Group(editor, result.getInt(1)));
+            }
+            
+            result.close();
+            
+            return ret;
+        } 
+        catch (SQLException e)
+        {
+            //should never happen
+            e.printStackTrace();
+            return new ArrayList<Group>();
+        }
+    }
+    
+    public boolean addToGroup(int groupId)
+    {
+        Group group = editor.getGroup(groupId);
+        
+        if(group != null)
+            return group.addMember(getId());
+        else
+            return false; //group does not even exist
+    }
+
+    public boolean addToGroup(Group group)
+    {
+        return addToGroup(group.getId());
+    }
+
+    public boolean removeGroupGroup(int groupId)
+    {
+        Group group = editor.getGroup(groupId);
+        
+        if(group != null)
+            return group.removeMember(getId());
+        else
+            return false; //group does not even exist
+    }
+
+    public boolean removeGroupGroup(Group group)
+    {
+        return removeGroupGroup(group.getId());
+    }
+
+    public boolean isMemberOf(int groupId)
+    {
+        Group group = editor.getGroup(groupId);
+        
+        if(group != null)
+            return group.isMember(getId());
+        else
+            return false; //group does not even exist
+    }
+
+    public boolean isMemberOf(Group group)
+    {
+        return isMemberOf(group.getId());
     }
     
     @Override

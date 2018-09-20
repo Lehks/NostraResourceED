@@ -1,6 +1,7 @@
 package nostra.resourceed;
 
 import java.io.File;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -8,37 +9,12 @@ import java.util.List;
 
 public class Editor
 {
-    /** Represents the Type table name inside the database. */
-    public static final String TYPE_TABLE = "resourceType";
-    /** Represents the Type Id column name inside the database. */
-    public static final String TYPE_ID_COLUMN = "tid";
-    /** Represents the Type Name column name inside the database */
-    public static final String TYPE_NAME_COLUMN = "name";
-
-    /** Represents the Resource Table name inside the database. */
-    public static final String RESOURCE_TABLE = "resource";
-    /** Represents the Resource Id column name inside the database. */
-    public static final String RESOURCE_ID_COLUMN = "rid";
-    /** Represents the Resource Path column name inside the database. */
-    public static final String RESOURCE_PATH_COLUMN = "path";
-    /** Represents the Resource Cache column name inside the database. */
-    public static final String RESOURCE_CACHED_COLUMN = "cached";
-    /** Represents the Resource Type column name inside the database.  */
-    public static final String RESOURCE_TYPE_COLUMN = "type";
-
-    /** Represents the Group Table name inside the database. */
-    public static final String GROUP_TABLE = "resourceGroup";
-    /** Represents the Group Name column name inside the database. */
-    public static final String GROUP_NAME_COLUMN = "name";
-    /** Represents the Group Id column name inside the database. */
-    public static final String GROUP_ID_COLUMN = "gid";
-
     /** Represents the Grouped Table name inside the database. */
-    public static final String GROUPED_TABLE = "resourceGroups";
+    public static final String GROUPED_SQL_TABLE = "resourceGroups";
     /** Represents the Grouped ResourceId column name inside the database. */
-    public static final String GROUPED_RESOURCE_ID_COLLUMN = "resourceID";
+    public static final String GROUPED_SQL_COL_RESOURCE_ID = "resourceID";
     /** Represents the Grouped GroupId column name inside the database. */
-    public static final String GROUPED_GROUP_ID_COLLUMN = "groupID";
+    public static final String GROUPED_SQL_COL_GROUP_ID = "groupID";
 
     
     /**
@@ -70,9 +46,9 @@ public class Editor
     {
         QueryBuilder builder = new QueryBuilder(database);
         
-        ResultSet result = builder.select(RESOURCE_ID_COLUMN)
-                                    .from(RESOURCE_TABLE)
-                                    .where(RESOURCE_ID_COLUMN, id)
+        ResultSet result = builder.select(Resource.SQL_COL_ID)
+                                    .from(Resource.SQL_TABLE)
+                                    .where(Resource.SQL_COL_ID, id)
                                     .executeQuery();
         
         try
@@ -104,9 +80,9 @@ public class Editor
     {
         QueryBuilder builder = new QueryBuilder(database);
         
-        ResultSet result = builder.select(TYPE_ID_COLUMN)
-                                    .from(TYPE_TABLE)
-                                    .where(TYPE_ID_COLUMN, id)
+        ResultSet result = builder.select(Type.SQL_COL_ID)
+                                    .from(Type.SQL_TABLE)
+                                    .where(Type.SQL_COL_ID, id)
                                     .executeQuery();
         try
         {
@@ -137,9 +113,9 @@ public class Editor
     {
         QueryBuilder builder = new QueryBuilder(database);
         
-        ResultSet result = builder.select(GROUP_ID_COLUMN)
-                                    .from(GROUP_TABLE)
-                                    .where(GROUP_ID_COLUMN, id)
+        ResultSet result = builder.select(Group.SQL_COL_ID)
+                                    .from(Group.SQL_TABLE)
+                                    .where(Group.SQL_COL_ID, id)
                                     .executeQuery();
         try
         {
@@ -176,10 +152,10 @@ public class Editor
 
         QueryBuilder query = new QueryBuilder(database);
         
-        int affectedRows = query.insert(RESOURCE_TABLE)
-            .set(RESOURCE_PATH_COLUMN, path)
-            .set(RESOURCE_CACHED_COLUMN, cached)
-            .set(RESOURCE_TYPE_COLUMN, typeId)
+        int affectedRows = query.insert(Resource.SQL_TABLE)
+            .set(Resource.SQL_COL_PATH, path)
+            .set(Resource.SQL_COL_CACHED, cached)
+            .set(Resource.SQL_COL_TYPE, typeId)
             .executeUpdate();
         
         //affected rows is 0, nothing was inserted
@@ -202,8 +178,8 @@ public class Editor
         
         QueryBuilder query = new QueryBuilder(database);
         
-        int affectedRows = query.insert(TYPE_TABLE)
-            .set(TYPE_NAME_COLUMN, name)
+        int affectedRows = query.insert(Type.SQL_TABLE)
+            .set(Type.SQL_COL_NAME, name)
             .executeUpdate();
         
         //affected rows is 0, nothing was inserted
@@ -221,8 +197,8 @@ public class Editor
         
         QueryBuilder query = new QueryBuilder(database);
         
-        int affectedRows = query.insert(GROUP_TABLE)
-            .set(GROUP_NAME_COLUMN, name)
+        int affectedRows = query.insert(Group.SQL_TABLE)
+            .set(Group.SQL_COL_NAME, name)
             .executeUpdate();
         
         //affected rows is 0, nothing was inserted
@@ -236,8 +212,8 @@ public class Editor
     {
         QueryBuilder builder = new QueryBuilder(database);
         
-        ResultSet result = builder.select(Editor.RESOURCE_ID_COLUMN)
-                                    .from(Editor.RESOURCE_TABLE)
+        ResultSet result = builder.select(Resource.SQL_COL_ID)
+                                    .from(Resource.SQL_COL_TYPE)
                                     .executeQuery();
         
         try
@@ -260,13 +236,89 @@ public class Editor
             return new ArrayList<Resource>();
         }
     }
+
+    public List<Resource> getResources(Filter filter)
+    {
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT ")
+            .append(Resource.SQL_COL_ID)
+            .append(" FROM ")
+            .append(Resource.SQL_TABLE);
+        
+        //joins
+        sql.append(" INNER JOIN ")
+            .append(Type.SQL_TABLE)
+            .append(" ON ")
+            .append(Resource.SQL_TABLE)
+            .append(".")
+            .append(Resource.SQL_COL_TYPE)
+            .append(" = ")
+            .append(Type.SQL_TABLE)
+            .append(".")
+            .append(Type.SQL_COL_ID);
+            
+        sql.append(" LEFT JOIN ")
+            .append(GROUPED_SQL_TABLE)
+            .append(" ON ")
+            .append(Resource.SQL_TABLE)
+            .append(".")
+            .append(Resource.SQL_COL_ID)
+            .append(" = ")
+            .append(GROUPED_SQL_TABLE)
+            .append(".")
+            .append(GROUPED_SQL_COL_RESOURCE_ID);
+
+        sql.append(" LEFT JOIN ")
+            .append(Group.SQL_TABLE)
+            .append(" ON ")
+            .append(GROUPED_SQL_TABLE)
+            .append(".")
+            .append(GROUPED_SQL_COL_GROUP_ID)
+            .append(" = ")
+            .append(Group.SQL_TABLE)
+            .append(".")
+            .append(Group.SQL_COL_ID);
+        
+        sql.append(" WHERE ");
+        sql.append(filter.generateSQL());
+        
+        //remove duplicate IDs
+        sql.append(" GROUP BY ")
+            .append(Resource.SQL_TABLE)
+            .append(".")
+            .append(Resource.SQL_COL_ID);
+        
+        PreparedStatement stmt = database.prepQuery(sql.toString());
+        
+        try
+        {
+            ResultSet result = stmt.executeQuery();
+
+            List<Resource> ret = new ArrayList<Resource>();
+            
+            while(result.next())
+            {
+                ret.add(new Resource(this, result.getInt(1)));
+            }
+            
+            result.close();
+            
+            return ret;
+        } 
+        catch (SQLException e1)
+        {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+            return new ArrayList<Resource>();
+        }
+    }
     
     public List<Type> getTypes()
     {
         QueryBuilder builder = new QueryBuilder(database);
         
-        ResultSet result = builder.select(Editor.TYPE_ID_COLUMN)
-                                    .from(Editor.TYPE_TABLE)
+        ResultSet result = builder.select(Type.SQL_COL_ID)
+                                    .from(Type.SQL_TABLE)
                                     .executeQuery();
         
         try
@@ -294,8 +346,8 @@ public class Editor
     {
         QueryBuilder builder = new QueryBuilder(database);
         
-        ResultSet result = builder.select(Editor.GROUP_ID_COLUMN)
-                                    .from(Editor.GROUP_TABLE)
+        ResultSet result = builder.select(Group.SQL_COL_ID)
+                                    .from(Group.SQL_TABLE)
                                     .executeQuery();
         
         try
@@ -325,8 +377,8 @@ public class Editor
         
         int affectedRows = builder
                 .delete()
-                .from(Editor.RESOURCE_TABLE)
-                .where(Editor.RESOURCE_ID_COLUMN, resourceId)
+                .from(Resource.SQL_TABLE)
+                .where(Resource.SQL_COL_ID, resourceId)
                 .executeUpdate();
 
         return affectedRows == 1; //can never be larger than 1, because selection is done through the primary key
@@ -343,8 +395,8 @@ public class Editor
         
         int affectedRows = builder
                 .delete()
-                .from(Editor.TYPE_TABLE)
-                .where(Editor.TYPE_ID_COLUMN, typeId)
+                .from(Type.SQL_TABLE)
+                .where(Type.SQL_COL_ID, typeId)
                 .executeUpdate();
 
         return affectedRows == 1; //can never be larger than 1, because selection is done through the primary key
@@ -361,8 +413,8 @@ public class Editor
         
         int affectedRows = builder
                 .delete()
-                .from(Editor.GROUP_TABLE)
-                .where(Editor.GROUP_ID_COLUMN, groupId)
+                .from(Group.SQL_TABLE)
+                .where(Group.SQL_COL_ID, groupId)
                 .executeUpdate();
 
         return affectedRows == 1; //can never be larger than 1, because selection is done through the primary key
