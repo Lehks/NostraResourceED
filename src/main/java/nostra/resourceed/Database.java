@@ -1,46 +1,22 @@
 package nostra.resourceed;
 
+import java.io.Closeable;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Properties;
 
-public class Database
+public class Database implements Closeable
 {
-    private static Database instance;
-    private static final String DBNAME = "nostra";
     private Connection conn;
-    private QueryBuilder query;
-
-
-    private Database() throws SQLException
+    
+    public Database(String path) throws SQLException
     {
         Properties properties = new Properties();
         properties.setProperty("foreign_keys", "ON");
         
-        this.conn = DriverManager.getConnection("jdbc:sqlite:" + DBNAME + ".db", properties);
-    }
-
-
-    public static Database getInstance()
-    {
-        if (Database.instance == null) {
-            try {
-                Database.instance = new Database();
-            }
-            catch(SQLException e) {
-                System.err.println(e.getMessage());
-            }
-        }
-
-        return Database.instance;
-    }
-
-
-    public static QueryBuilder getQuery()
-    {
-        return new QueryBuilder(Database.getInstance());
+        this.conn = DriverManager.getConnection("jdbc:sqlite:" + path, properties);
     }
 
 
@@ -72,6 +48,7 @@ public class Database
     }
 
 
+    @Override
     public void close()
     {
         if (this.conn == null) {

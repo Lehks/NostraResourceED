@@ -1,13 +1,15 @@
 package nostra.resourceed;
 
+import java.io.Closeable;
 import java.io.File;
+import java.io.IOException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Editor
+public class Editor implements Closeable
 {
     /** Represents the Grouped Table name inside the database. */
     public static final String GROUPED_SQL_TABLE = "resourceGroups";
@@ -423,5 +425,11 @@ public class Editor
     public boolean removeGroup(Group group)
     {
         return removeGroup(group.getId());
+    }
+
+    @Override
+    public void close() throws IOException
+    {
+        database.close();
     }
 }
