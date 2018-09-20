@@ -139,7 +139,7 @@ public class QueryBuilder
     public QueryBuilder where(String column, Integer value)
     {
         if (column.trim().length() == 0) return this;
-        if (!column.contains("?")) column = column + " ?";
+        if (!column.contains("?")) column = column + " = ?";
 
         this.filterColumns.add(column.trim());
         this.filterIntegerValues.add(value);
@@ -150,7 +150,7 @@ public class QueryBuilder
     public QueryBuilder where(String column, Double value)
     {
         if (column.trim().length() == 0) return this;
-        if (!column.contains("?")) column = column + " ?";
+        if (!column.contains("?")) column = column + " = ?";
 
         this.filterColumns.add(column.trim());
         this.filterDoubleValues.add(value);
@@ -161,7 +161,7 @@ public class QueryBuilder
     public QueryBuilder where(String column)
     {
         if (column.trim().length() == 0) return this;
-        if (!column.contains("?")) column += " ?";
+        if (!column.contains("?")) column += " = ?";
 
         this.filterColumns.add(column.trim());
         this.filterStringValues.add("");

@@ -1,95 +1,199 @@
 package nostra.resourceed;
 
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.ReadOnlyIntegerProperty;
-import javafx.beans.property.ReadOnlyIntegerWrapper;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public class Resource
 {
     private Editor editor;
     
-    private ReadOnlyIntegerWrapper id;
+    private final int id;
     
-    private StringProperty path;
-    
-    private StringProperty cached;
-    
-    private IntegerProperty typeId;
-    
-    public Resource(Editor editor, final int id, String path, String cached, int typeId)
+    public Resource(Editor editor, final int id)
     {
         this.editor = editor;
-        this.id = new ReadOnlyIntegerWrapper(id);
-        this.path = new SimpleStringProperty(path);
-        this.cached = new SimpleStringProperty(cached);
-        this.typeId = new SimpleIntegerProperty(typeId);
+        this.id = id;
     }
     
     public int getId()
     {
-        return id.get();
-    }
-    
-    public ReadOnlyIntegerProperty idProperty()
-    {
-        return id.getReadOnlyProperty();
-    }
-    
-    public String getPath()
-    {
-        return path.get();
-    }
-    
-    public void setPath(String path)
-    {
-        this.path.set(path);
-    }
-    
-    public StringProperty pathProperty()
-    {
-        return path;
+        return id;
     }
 
-    public String getCached()
+    public String getPath()
     {
-        return cached.get();
+        QueryBuilder builder = new QueryBuilder(editor.getDatabase());
+        
+        ResultSet result = builder.select(Editor.RESOURCE_PATH_COLUMN)
+                                    .from(Editor.RESOURCE_TABLE)
+                                    .where(Editor.RESOURCE_ID_COLUMN, getId())
+                                    .executeQuery();
+        
+        try
+        {
+            boolean hasNext = result.next();
+            
+            String ret = null;
+            
+            if(hasNext)
+                ret = result.getString(1);
+            else //this case should never happen if the instance was constructed by Editor.getResource()
+                ret = null;
+            
+            result.close();
+            
+            return ret;
+        } 
+        catch (SQLException e)
+        {
+            //should never happen
+            e.printStackTrace();
+            return null;
+        }
     }
     
-    public void setCached(String path)
+    public boolean setPath(String path)
     {
-        this.cached.set(path);
+        //TODO: errors like this should be handled by the database, but the interface does not support that yet
+        if(path == null)
+            throw new NullPointerException("The path must not be null.");
+        
+        QueryBuilder builder = new QueryBuilder(editor.getDatabase());
+        
+        int affectedRows = builder.update(Editor.RESOURCE_TABLE)
+                .set(Editor.RESOURCE_PATH_COLUMN, path)
+                .where(Editor.RESOURCE_ID_COLUMN, getId())
+                .executeUpdate();
+        
+        return affectedRows == 1; //can never be larger than 1, because selection is done through the primary key
+    }
+
+    public String getCache()
+    {
+        QueryBuilder builder = new QueryBuilder(editor.getDatabase());
+        
+        ResultSet result = builder.select(Editor.RESOURCE_CACHED_COLUMN)
+                                    .from(Editor.RESOURCE_TABLE)
+                                    .where(Editor.RESOURCE_ID_COLUMN, getId())
+                                    .executeQuery();
+        
+        try
+        {
+            boolean hasNext = result.next();
+            
+            String ret = null;
+            
+            if(hasNext)
+                ret = result.getString(1);
+            else //this case should never happen if the instance was constructed by Editor.getResource()
+                ret = null;
+            
+            result.close();
+            
+            return ret;
+        } 
+        catch (SQLException e)
+        {
+            //should never happen
+            e.printStackTrace();
+            return null;
+        }
     }
     
-    public StringProperty cachedProperty()
+    public boolean setCached(String cache)
     {
-        return cached;
+        //TODO: errors like this should be handled by the database, but the interface does not support that yet
+        if(cache == null)
+            throw new NullPointerException("The cache must not be null.");
+        
+        QueryBuilder builder = new QueryBuilder(editor.getDatabase());
+        
+        int affectedRows = builder.update(Editor.RESOURCE_TABLE)
+                .set(Editor.RESOURCE_CACHED_COLUMN, cache)
+                .where(Editor.RESOURCE_ID_COLUMN, getId())
+                .executeUpdate();
+        
+        return affectedRows == 1; //can never be larger than 1, because selection is done through the primary key
     }
-    
+
     public int getTypeId()
     {
-        return typeId.get();
+        QueryBuilder builder = new QueryBuilder(editor.getDatabase());
+        
+        ResultSet result = builder.select(Editor.RESOURCE_TYPE_COLUMN)
+                                    .from(Editor.RESOURCE_TABLE)
+                                    .where(Editor.RESOURCE_ID_COLUMN, getId())
+                                    .executeQuery();
+        
+        try
+        {
+            boolean hasNext = result.next();
+            
+            int ret = 0; //the IDs start at 1
+            
+            if(hasNext)
+                ret = result.getInt(1);
+            else //this case should never happen if the instance was constructed by Editor.getResource()
+                ret = 0;
+            
+            result.close();
+            
+            return ret;
+        } 
+        catch (SQLException e)
+        {
+            //should never happen
+            e.printStackTrace();
+            return 0;
+        }
     }
     
     public Type getType()
     {
-        return editor.getType(getTypeId());
+        return new Type(editor, getTypeId());
     }
     
-    public void setTypeId(int typeId)
+    public boolean setType(int typeId)
     {
-        this.typeId.set(typeId);
+        QueryBuilder builder = new QueryBuilder(editor.getDatabase());
+        
+        int affectedRows = builder.update(Editor.RESOURCE_TABLE)
+                .set(Editor.RESOURCE_TYPE_COLUMN, typeId)
+                .where(Editor.RESOURCE_ID_COLUMN, getId())
+                .executeUpdate();
+        
+        return affectedRows == 1; //can never be larger than 1, because selection is done through the primary key
     }
     
-    public void setType(Type type)
+    public boolean setType(Type type)
     {
-        setTypeId(type.getId());
+        return setType(type.getId());
     }
     
-    public IntegerProperty typeIdProperty()
+    public Editor getEditor()
     {
-        return typeId;
+        return editor;
+    }
+    
+    @Override
+    public boolean equals(Object obj)
+    {
+        if(this == obj)
+            return true;
+        
+        if(obj instanceof Resource)
+        {
+            Resource type = (Resource) obj;
+            
+            return getId() == type.getId();
+        }
+        else
+            return false;
+    }
+    
+    @Override
+    public String toString()
+    {
+        return "Resource(id=" + getId() + ";path=" + getPath() + ";cache=" + getCache() + ";type=" + getTypeId() + ")";
     }
 }

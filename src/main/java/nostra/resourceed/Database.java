@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Properties;
 
 public class Database
 {
@@ -15,7 +16,10 @@ public class Database
 
     private Database() throws SQLException
     {
-        this.conn = DriverManager.getConnection("jdbc:sqlite:" + DBNAME + ".db");
+        Properties properties = new Properties();
+        properties.setProperty("foreign_keys", "ON");
+        
+        this.conn = DriverManager.getConnection("jdbc:sqlite:" + DBNAME + ".db", properties);
     }
 
 
