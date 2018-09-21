@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.ContextMenu?>
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.input.KeyCodeCombination?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.VBox?>
@@ -32,6 +33,7 @@
                               <KeyCodeCombination alt="UP" code="O" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
                            </accelerator>
                         </MenuItem>
+                        <Menu fx:id="menuRecentlyOpened" mnemonicParsing="false" text="Recently Opened" />
                   <MenuItem mnemonicParsing="false" onAction="#fileSaveOnAction" text="Save">
                            <accelerator>
                               <KeyCodeCombination alt="UP" code="S" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
@@ -75,17 +77,17 @@
           </MenuBar>
           <SplitPane dividerPositions="0.25, 0.75" focusTraversable="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="ALWAYS">
             <items>
-                  <VBox spacing="10.0">
-                     <padding>
-                        <Insets left="10.0" right="10.0" top="10.0" />
-                     </padding>
-                  </VBox>
+                  <TitledPane animated="false" collapsible="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="Filter">
+                    <content>
+                        <ScrollPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" />
+                    </content>
+                  </TitledPane>
                   <TableView fx:id="tableViewResource">
                     <columns>
                       <TableColumn fx:id="tableColumnIdResource" text="ID" />
                       <TableColumn fx:id="tableColumnPathResource" text="Path" />
                         <TableColumn fx:id="tableColumnCachedResource" text="Cached" />
-                        <TableColumn fx:id="tableColumnType" text="Type">
+                        <TableColumn text="Type">
                            <columns>
                               <TableColumn fx:id="tableColumnTypeNameResource" text="Name" />
                               <TableColumn fx:id="tableColumnTypeIdResource" text="ID" />

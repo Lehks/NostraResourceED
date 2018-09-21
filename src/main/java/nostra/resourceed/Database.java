@@ -19,6 +19,17 @@ public class Database implements Closeable
         
         this.path = path;
         this.conn = DriverManager.getConnection("jdbc:sqlite:" + path, properties);
+        
+        //throw exception if the database does not exis
+        try
+        {
+            PreparedStatement stmt = this.conn.prepareStatement("pragma schema_version");
+            stmt.executeQuery();
+        }
+        catch (SQLException e) 
+        {
+            throw new SQLException(e);
+        }
     }
 
 

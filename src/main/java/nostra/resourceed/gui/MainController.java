@@ -1,14 +1,23 @@
 package nostra.resourceed.gui;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Iterator;
+import java.util.Scanner;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import javafx.application.Platform;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.stage.FileChooser;
@@ -19,8 +28,12 @@ import nostra.resourceed.Type;
 
 public class MainController
 {
-    ResourceED application;
+    public final static String CONFIG_KEY_RECENT = "recent";
+    
+    private ResourceED application;
 
+    private JSONObject configFile;
+    
     @FXML
     private TableView<Resource> tableViewResource;
 
@@ -38,9 +51,6 @@ public class MainController
 
     @FXML
     private TableColumn<Resource, Integer> tableColumnTypeIdResource;
-
-    @FXML
-    private TableColumn<?, ?> tableColumnType;
 
     @FXML
     private TableView<Group> tableViewGroup;
@@ -61,8 +71,12 @@ public class MainController
     private TableColumn<Type, String> tableColumnNameType;
 
     @FXML
+    private Menu menuRecentlyOpened;
+
+    @FXML
     public void initialize()
     {
+        //set cell factories for the tables
         tableColumnIdResource.setCellValueFactory(param -> new SimpleIntegerProperty(param.getValue().getId()).asObject());
         tableColumnPathResource.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getPath()));
         tableColumnCachedResource.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getCache()));
@@ -79,8 +93,78 @@ public class MainController
     public void lateInit(ResourceED application)
     {
         this.application = application;
+        
+        loadConfigFile();
+        
+        reloadRecentlyOpened();
     }
 
+    private void loadConfigFile()
+    {
+
+        if(!application.getConfigFile().exists())
+        {
+            try
+            {
+                if(!application.getConfigFile().getParentFile().exists())
+                    application.getConfigFile().getParentFile().mkdirs();
+                
+                application.getConfigFile().createNewFile();
+            } 
+            catch (IOException e1)
+            {
+                e1.printStackTrace();
+            }
+        }
+        
+        try
+        {
+            Scanner scanner = new Scanner(new FileInputStream(application.getConfigFile()));
+            
+            StringBuilder builder = new StringBuilder();
+            
+            while(scanner.hasNextLine())
+                builder.append(scanner.nextLine());
+            
+            scanner.close();
+            
+            configFile = new JSONObject(builder.toString());
+        } 
+        catch (FileNotFoundException e)
+        {
+            e.printStackTrace();
+        }
+        
+    }
+    
+    private void reloadRecentlyOpened()
+    {
+        menuRecentlyOpened.getItems().clear();
+        
+        JSONArray array = configFile.getJSONArray(CONFIG_KEY_RECENT);
+
+        for(Object object: array)
+        {
+            //ignore bad entries; aka. entries with wrong type(s)
+            if(object instanceof String)
+            {
+                MenuItem item = new MenuItem((String)object);
+                
+                //action to reload with appropriate database
+                item.setOnAction(event ->
+                {
+                    String path = ((MenuItem)event.getSource()).getText();
+                    File file = new File(path);
+                    
+                    registerEditor(file);
+                    addRecentFilesEntry(file);
+                });
+                
+                menuRecentlyOpened.getItems().add(0, item);
+            }
+        }
+    }
+    
     @FXML
     void addResource(ActionEvent event)
     {
@@ -163,6 +247,7 @@ public class MainController
 
         if (database != null) // check if a file was actually chosen
         {
+            addRecentFilesEntry(database);
             registerEditor(database);
         }
     }
@@ -170,7 +255,7 @@ public class MainController
     @FXML
     void fileQuitOnAction(ActionEvent event)
     {
-        save();
+        closeEditor();
 
         Platform.exit();
     }
@@ -281,8 +366,47 @@ public class MainController
         }
     }
 
+    private void addRecentFilesEntry(File file)
+    {
+        JSONArray recent = configFile.getJSONArray(CONFIG_KEY_RECENT);
+        
+        //remove entry if the file is already in it - this way it will be added at the top
+        {
+            for(Iterator<Object> i = recent.iterator(); i.hasNext();)
+            {
+                Object object = i.next();
+                
+                if(object instanceof String)
+                {
+                    if(((String)object).equals(file.getAbsolutePath()))
+                    {
+                        i.remove();
+                    }
+                }
+            }
+        }
+        
+        if(recent.length() >= 10)
+        {
+            recent.remove(0);
+        }
+        
+        recent.put(recent.length(), file.getAbsolutePath());
+        
+        reloadRecentlyOpened();
+    }
+    
     private void registerEditor(File database)
     {
+        if(!database.exists())
+        {
+            Utils.showError("Database does not exist", 
+                    String.format("The file \"%s\" does not exist.", 
+                            database.getAbsolutePath()), application.getPrimaryStage());
+            
+            return;
+        }
+        
         // true by default, because if the editor does not need to be closed there is no
         // problem either way
         boolean couldClose = true;
@@ -296,27 +420,35 @@ public class MainController
         try
         {
             application.setEditor(new Editor(database));
+            
+            //add the resources/groups/types
+            tableViewResource.getItems().addAll(application.getEditor().getResources());
+            tableViewGroup.getItems().addAll(application.getEditor().getGroups());
+            tableViewType.getItems().addAll(application.getEditor().getTypes());
+            
+            //register add/edit/remove events
+            application.getEditor().getResourceAddEvents().add(resource -> tableViewResource.getItems().add(resource));
+            application.getEditor().getResourceEditEvents().add(type -> tableViewResource.refresh());
+            application.getEditor().getResourceRemoveEvents().add(id -> tableViewResource.getItems().removeIf(resource -> resource.getId() == id));
+            
+            application.getEditor().getTypeAddEvents().add(type -> tableViewType.getItems().add(type));
+            application.getEditor().getTypeEditEvents().add(type -> tableViewType.refresh());
+            application.getEditor().getTypeRemoveEvents().add(id -> tableViewType.getItems().removeIf(type -> type.getId() == id));
+            
+            application.getEditor().getGroupAddEvents().add(group -> tableViewGroup.getItems().add(group));
+            application.getEditor().getGroupEditEvents().add(type -> tableViewGroup.refresh());
+            application.getEditor().getGroupRemoveEvents().add(id -> tableViewGroup.getItems().removeIf(group -> group.getId() == id));
+        
         } 
         catch (SQLException e)
         {
             Utils.showError("Could not load database", e.getMessage(), application.getPrimaryStage());
             application.setEditor(null);
         }
-        
-        tableViewResource.getItems().addAll(application.getEditor().getResources());
-        tableViewGroup.getItems().addAll(application.getEditor().getGroups());
-        tableViewType.getItems().addAll(application.getEditor().getTypes());
-        
-        application.getEditor().getResourceAddEvents().add(resource -> tableViewResource.getItems().add(resource));
-        application.getEditor().getResourceEditEvents().add(type -> tableViewResource.refresh());
-        application.getEditor().getResourceRemoveEvents().add(id -> tableViewResource.getItems().removeIf(resource -> resource.getId() == id));
-        
-        application.getEditor().getTypeAddEvents().add(type -> tableViewType.getItems().add(type));
-        application.getEditor().getTypeEditEvents().add(type -> tableViewType.refresh());
-        application.getEditor().getTypeRemoveEvents().add(id -> tableViewType.getItems().removeIf(type -> type.getId() == id));
-        
-        application.getEditor().getGroupAddEvents().add(group -> tableViewGroup.getItems().add(group));
-        application.getEditor().getGroupEditEvents().add(type -> tableViewGroup.refresh());
-        application.getEditor().getGroupRemoveEvents().add(id -> tableViewGroup.getItems().removeIf(group -> group.getId() == id));
+    }
+    
+    public JSONObject getConfigFile()
+    {
+        return configFile;
     }
 }
