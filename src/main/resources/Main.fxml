@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.ContextMenu?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.input.KeyCodeCombination?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="600.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="nostra.resourceed.gui.MainController">
+   <children>
+      <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <children>
+          <MenuBar maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308">
+            <menus>
+              <Menu mnemonicParsing="false" text="File">
+                <items>
+                        <MenuItem mnemonicParsing="false" onAction="#fileNewOnAction" text="New">
+                           <accelerator>
+                              <KeyCodeCombination alt="UP" code="N" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                           </accelerator>
+                        </MenuItem>
+                  <MenuItem mnemonicParsing="false" onAction="#fileOpenOnAction" text="Open">
+                           <accelerator>
+                              <KeyCodeCombination alt="UP" code="O" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                           </accelerator>
+                        </MenuItem>
+                  <MenuItem mnemonicParsing="false" onAction="#fileSaveOnAction" text="Save">
+                           <accelerator>
+                              <KeyCodeCombination alt="UP" code="S" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                           </accelerator></MenuItem>
+                  <MenuItem mnemonicParsing="false" onAction="#fileQuitOnAction" text="Quit">
+                           <accelerator>
+                              <KeyCodeCombination alt="DOWN" code="F4" control="UP" meta="UP" shift="UP" shortcut="UP" />
+                           </accelerator>
+                        </MenuItem>
+                </items>
+                     <accelerator>
+                        <KeyCodeCombination alt="DOWN" code="F5" control="UP" meta="UP" shift="UP" shortcut="UP" />
+                     </accelerator>
+              </Menu>
+              <Menu mnemonicParsing="false" text="Edit">
+                <items>
+                        <Menu mnemonicParsing="false" text="Resource">
+                           <items>
+                            <MenuItem mnemonicParsing="false" onAction="#addResource" text="Add" />
+                        <MenuItem mnemonicParsing="false" onAction="#editResource" text="Edit Selected" />
+                              <MenuItem mnemonicParsing="false" onAction="#removeResource" text="Remove Selected" />
+                           </items>
+                        </Menu>
+                        <Menu mnemonicParsing="false" text="Type">
+                           <items>
+                              <MenuItem mnemonicParsing="false" onAction="#addType" text="Add" />
+                        <MenuItem mnemonicParsing="false" onAction="#editType" text="Edit" />
+                              <MenuItem mnemonicParsing="false" onAction="#removeType" text="Remove" />
+                           </items>
+                        </Menu>
+                        <Menu mnemonicParsing="false" text="Group">
+                           <items>
+                              <MenuItem mnemonicParsing="false" onAction="#addGroup" text="Add" />
+                              <MenuItem mnemonicParsing="false" onAction="#editGroup" text="Edit" />
+                              <MenuItem mnemonicParsing="false" onAction="#removeGroup" text="Remove" />
+                           </items>
+                        </Menu>
+                </items>
+              </Menu>
+            </menus>
+          </MenuBar>
+          <SplitPane dividerPositions="0.25, 0.75" focusTraversable="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="ALWAYS">
+            <items>
+                  <VBox spacing="10.0">
+                     <padding>
+                        <Insets left="10.0" right="10.0" top="10.0" />
+                     </padding>
+                  </VBox>
+                  <TableView fx:id="tableViewResource">
+                    <columns>
+                      <TableColumn fx:id="tableColumnIdResource" text="ID" />
+                      <TableColumn fx:id="tableColumnPathResource" text="Path" />
+                        <TableColumn fx:id="tableColumnCachedResource" text="Cached" />
+                        <TableColumn fx:id="tableColumnType" text="Type">
+                           <columns>
+                              <TableColumn fx:id="tableColumnTypeNameResource" text="Name" />
+                              <TableColumn fx:id="tableColumnTypeIdResource" text="ID" />
+                           </columns>
+                        </TableColumn>
+                    </columns>
+                     <columnResizePolicy>
+                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                     </columnResizePolicy>
+                     <contextMenu>
+                        <ContextMenu>
+                           <items>
+                              <MenuItem mnemonicParsing="false" onAction="#addResource" text="Add" />
+                              <MenuItem mnemonicParsing="false" onAction="#editResource" text="Edit Selected" />
+                              <MenuItem mnemonicParsing="false" onAction="#removeResource" text="Remove Selected" />
+                           </items>
+                        </ContextMenu>
+                     </contextMenu>
+                  </TableView>
+                  <TabPane>
+                     <tabs>
+                        <Tab closable="false" text="Types">
+                           <content>
+                           	<TableView fx:id="tableViewType" maxWidth="1.7976931348623157E308">
+                                <columns>
+                                  <TableColumn fx:id="tableColumnIdType" editable="false" text="ID" />
+                                  <TableColumn fx:id="tableColumnNameType" editable="false" text="Name" />
+                                </columns>
+                                 <columnResizePolicy>
+                                    <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                                 </columnResizePolicy>
+                                 <contextMenu>
+                                    <ContextMenu>
+                                       <items>
+                                          <MenuItem mnemonicParsing="false" onAction="#addType" text="Add" />
+                                          <MenuItem mnemonicParsing="false" onAction="#editType" text="Edit Selected" />
+                                          <MenuItem mnemonicParsing="false" onAction="#removeType" text="Remove Selected" />
+                                       </items>
+                                    </ContextMenu>
+                                 </contextMenu>
+                              </TableView>
+                           </content>
+                        </Tab>
+                        <Tab closable="false" text="Groups">
+                           <content>
+                              <TableView fx:id="tableViewGroup" maxWidth="1.7976931348623157E308">
+                                <columns>
+                                  <TableColumn fx:id="tableColumnIdGroup" editable="false" text="ID" />
+                                  <TableColumn fx:id="tableColumnNameGroup" editable="false" text="Name" />
+                                </columns>
+                                 <columnResizePolicy>
+                                    <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                                 </columnResizePolicy>
+                                 <contextMenu>
+                                    <ContextMenu>
+                                       <items>
+                                          <MenuItem mnemonicParsing="false" onAction="#addGroup" text="Add" />
+                                          <MenuItem mnemonicParsing="false" onAction="#editGroup" text="Edit Selected" />
+                                          <MenuItem mnemonicParsing="false" onAction="#removeGroup" text="Remove Selected" />
+                                       </items>
+                                    </ContextMenu>
+                                 </contextMenu>
+                              </TableView>
+                           </content>
+                        </Tab>
+                     </tabs>
+                  </TabPane>
+            </items>
+          </SplitPane>
+         </children>
+      </VBox>
+   </children>
+</AnchorPane>

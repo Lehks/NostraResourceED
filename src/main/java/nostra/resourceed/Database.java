@@ -10,12 +10,14 @@ import java.util.Properties;
 public class Database implements Closeable
 {
     private Connection conn;
+    private String path;
     
     public Database(String path) throws SQLException
     {
         Properties properties = new Properties();
         properties.setProperty("foreign_keys", "ON");
         
+        this.path = path;
         this.conn = DriverManager.getConnection("jdbc:sqlite:" + path, properties);
     }
 
@@ -63,5 +65,10 @@ public class Database implements Closeable
         }
 
         this.conn = null;
+    }
+    
+    public String getPath()
+    {
+        return path;
     }
 }

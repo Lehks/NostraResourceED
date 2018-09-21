@@ -1,4 +1,7 @@
-package nostra.resourceed;
+package nostra.resourceed.filter;
+
+import nostra.resourceed.Filter;
+import nostra.resourceed.Resource;
 
 public class ResourcePathFilter extends Filter
 {

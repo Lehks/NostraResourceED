@@ -1,4 +1,7 @@
-package nostra.resourceed;
+package nostra.resourceed.filter;
+
+import nostra.resourceed.Filter;
+import nostra.resourceed.Type;
 
 public class TypeIDFilter extends Filter
 {

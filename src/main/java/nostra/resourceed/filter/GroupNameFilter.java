@@ -1,4 +1,7 @@
-package nostra.resourceed;
+package nostra.resourceed.filter;
+
+import nostra.resourceed.Filter;
+import nostra.resourceed.Group;
 
 public class GroupNameFilter extends Filter
 {

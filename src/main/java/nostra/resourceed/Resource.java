@@ -79,6 +79,9 @@ public class Resource
                 .where(SQL_COL_ID, getId())
                 .executeUpdate();
         
+        if(affectedRows == 1)
+            editor.fireResourceEditEvent(this);
+        
         return affectedRows == 1; //can never be larger than 1, because selection is done through the primary key
     }
 
@@ -126,6 +129,9 @@ public class Resource
                 .set(SQL_COL_CACHED, cache)
                 .where(SQL_COL_ID, getId())
                 .executeUpdate();
+
+        if(affectedRows == 1)
+            editor.fireResourceEditEvent(this);
         
         return affectedRows == 1; //can never be larger than 1, because selection is done through the primary key
     }
@@ -175,6 +181,9 @@ public class Resource
                 .set(SQL_COL_TYPE, typeId)
                 .where(SQL_COL_ID, getId())
                 .executeUpdate();
+
+        if(affectedRows == 1)
+            editor.fireResourceEditEvent(this);
         
         return affectedRows == 1; //can never be larger than 1, because selection is done through the primary key
     }
@@ -234,7 +243,7 @@ public class Resource
         return addToGroup(group.getId());
     }
 
-    public boolean removeGroupGroup(int groupId)
+    public boolean removeFromGroup(int groupId)
     {
         Group group = editor.getGroup(groupId);
         
@@ -244,9 +253,9 @@ public class Resource
             return false; //group does not even exist
     }
 
-    public boolean removeGroupGroup(Group group)
+    public boolean removeFromGroup(Group group)
     {
-        return removeGroupGroup(group.getId());
+        return removeFromGroup(group.getId());
     }
 
     public boolean isMemberOf(int groupId)

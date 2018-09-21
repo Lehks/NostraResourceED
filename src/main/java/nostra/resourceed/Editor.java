@@ -8,6 +8,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 public class Editor implements Closeable
 {
@@ -24,19 +26,48 @@ public class Editor implements Closeable
      */
     private Database database;
     
-    public Editor(String databasePath)
+    private List<Consumer<Resource>> resourceAddEvents;
+    private List<Consumer<Resource>> resourceEditEvents;
+    private List<Consumer<Integer>> resourceRemoveEvents;
+
+    private List<Consumer<Type>> typeAddEvents;
+    private List<Consumer<Type>> typeEditEvents;
+    private List<Consumer<Integer>> typeRemoveEvents;
+
+    private List<Consumer<Group>> groupAddEvents;
+    private List<Consumer<Group>> groupEditEvents;
+    private List<Consumer<Integer>> groupRemoveEvents;
+
+    private List<BiConsumer<Group, Resource>> resourceAddToGroupEvents;
+    private List<BiConsumer<Group, Resource>> resourceRemoveFromGroupEvents;
+    
+    public Editor(String databasePath) throws SQLException
     {
-        this(new File(databasePath));
+        this(new Database(databasePath));
     }
     
-    public Editor(File database)
+    public Editor(File database) throws SQLException
     {
-        
+        this(database.getAbsolutePath());
     }
     
     public Editor(Database database)
     {
         this.database = database;
+        this.resourceAddEvents = new ArrayList<>();
+        this.resourceEditEvents = new ArrayList<>();
+        this.resourceRemoveEvents = new ArrayList<>();
+        
+        this.typeAddEvents = new ArrayList<>();
+        this.typeEditEvents = new ArrayList<>();
+        this.typeRemoveEvents = new ArrayList<>();
+        
+        this.groupAddEvents = new ArrayList<>();
+        this.groupEditEvents = new ArrayList<>();
+        this.groupRemoveEvents = new ArrayList<>();
+        
+        this.resourceAddToGroupEvents = new ArrayList<>();
+        this.resourceRemoveFromGroupEvents = new ArrayList<>();
     }
     
     public Database getDatabase()
@@ -164,7 +195,13 @@ public class Editor implements Closeable
         if(affectedRows == 0)
             return null;
         else 
-            return new Resource(this, query.getInsertId());
+        {
+            Resource ret = new Resource(this, query.getInsertId());
+            
+            resourceAddEvents.forEach(event -> event.accept(ret));
+
+            return ret;
+        }
     }
     
     public Resource addResource(String path, String cached, Type type)
@@ -188,7 +225,13 @@ public class Editor implements Closeable
         if(affectedRows == 0)
             return null;
         else 
-            return new Type(this, query.getInsertId());
+        {
+            Type ret = new Type(this, query.getInsertId());
+
+            typeAddEvents.forEach(event -> event.accept(ret));
+
+            return ret;
+        }
     }
 
     public Group addGroup(String name)
@@ -207,7 +250,13 @@ public class Editor implements Closeable
         if(affectedRows == 0)
             return null;
         else 
-            return new Group(this, query.getInsertId());
+        {
+            Group ret = new Group(this, query.getInsertId());
+
+            groupAddEvents.forEach(event -> event.accept(ret));
+
+            return ret;
+        }
     }
     
     public List<Resource> getResources()
@@ -215,7 +264,7 @@ public class Editor implements Closeable
         QueryBuilder builder = new QueryBuilder(database);
         
         ResultSet result = builder.select(Resource.SQL_COL_ID)
-                                    .from(Resource.SQL_COL_TYPE)
+                                    .from(Resource.SQL_TABLE)
                                     .executeQuery();
         
         try
@@ -383,6 +432,9 @@ public class Editor implements Closeable
                 .where(Resource.SQL_COL_ID, resourceId)
                 .executeUpdate();
 
+        if(affectedRows == 1)
+            resourceRemoveEvents.forEach(event -> event.accept(resourceId));
+        
         return affectedRows == 1; //can never be larger than 1, because selection is done through the primary key
     }
     
@@ -401,6 +453,9 @@ public class Editor implements Closeable
                 .where(Type.SQL_COL_ID, typeId)
                 .executeUpdate();
 
+        if(affectedRows == 1)
+            typeRemoveEvents.forEach(event -> event.accept(typeId));
+        
         return affectedRows == 1; //can never be larger than 1, because selection is done through the primary key
     }
     
@@ -419,12 +474,100 @@ public class Editor implements Closeable
                 .where(Group.SQL_COL_ID, groupId)
                 .executeUpdate();
 
+        if(affectedRows == 1)
+            groupRemoveEvents.forEach(event -> event.accept(groupId));
+        
         return affectedRows == 1; //can never be larger than 1, because selection is done through the primary key
     }
     
     public boolean removeGroup(Group group)
     {
         return removeGroup(group.getId());
+    }
+
+    public List<Consumer<Resource>> getResourceAddEvents()
+    {
+        return resourceAddEvents;
+    }
+    
+    public List<Consumer<Resource>> getResourceEditEvents()
+    {
+        return resourceEditEvents;
+    }
+    
+    public List<Consumer<Integer>> getResourceRemoveEvents()
+    {
+        return resourceRemoveEvents;
+    }
+    
+    public List<Consumer<Type>> getTypeAddEvents()
+    {
+        return typeAddEvents;
+    }
+    
+    public List<Consumer<Type>> getTypeEditEvents()
+    {
+        return typeEditEvents;
+    }
+    
+    public List<Consumer<Integer>> getTypeRemoveEvents()
+    {
+        return typeRemoveEvents;
+    }
+    
+    public List<Consumer<Group>> getGroupAddEvents()
+    {
+        return groupAddEvents;
+    }
+    
+    public List<Consumer<Group>> getGroupEditEvents()
+    {
+        return groupEditEvents;
+    }
+    
+    public List<Consumer<Integer>> getGroupRemoveEvents()
+    {
+        return groupRemoveEvents;
+    }
+    
+    public List<BiConsumer<Group, Resource>> getResourceAddToGroupEvents()
+    {
+        return resourceAddToGroupEvents;
+    }
+    
+    public List<BiConsumer<Group, Resource>> getResourceRemoveFromGroupEvents()
+    {
+        return resourceRemoveFromGroupEvents;
+    }
+
+    //default visibility on purpose; to emulate friends from C++; only Type should call this
+    void fireResourceEditEvent(Resource resource)
+    {
+        resourceEditEvents.forEach(event -> event.accept(resource));
+    }
+
+    //default visibility on purpose; to emulate friends from C++; only Type should call this
+    void fireTypeEditEvent(Type type)
+    {
+        typeEditEvents.forEach(event -> event.accept(type));
+    }
+
+    //default visibility on purpose; to emulate friends from C++; only Type should call this
+    void fireGroupEditEvent(Group group)
+    {
+        groupEditEvents.forEach(event -> event.accept(group));
+    }
+
+    //default visibility on purpose; to emulate friends from C++; only Type should call this
+    void fireResourceAddToGroupEvent(Group group, Resource resource)
+    {
+        resourceAddToGroupEvents.forEach(event -> event.accept(group, resource));
+    }
+
+    //default visibility on purpose; to emulate friends from C++; only Type should call this
+    void fireResourceRemoveFromGroupEvent(Group group, Resource resource)
+    {
+        resourceRemoveFromGroupEvents.forEach(event -> event.accept(group, resource));
     }
 
     @Override

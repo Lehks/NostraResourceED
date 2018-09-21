@@ -73,6 +73,9 @@ public class Group
                 .where(SQL_COL_ID, getId())
                 .executeUpdate();
         
+        if(affectedRows == 1)
+            editor.fireGroupEditEvent(this);
+                
         return affectedRows == 1; //can never be larger than 1, because selection is done through the primary key
     }
     
@@ -164,9 +167,13 @@ public class Group
         int affectedRows = builder
                 .delete()
                 .from(Editor.GROUPED_SQL_TABLE)
-                .where(Editor.GROUPED_SQL_COL_RESOURCE_ID, resourceId)
+                .where(Editor.GROUPED_SQL_COL_RESOURCE_ID + " = " + resourceId //bit of a hack to use AND
+                        + " AND " + Editor.GROUPED_SQL_COL_GROUP_ID, getId())
                 .executeUpdate();
 
+        if(affectedRows == 1)
+            editor.fireResourceRemoveFromGroupEvent(this, editor.getResource(resourceId));
+        
         return affectedRows == 1; //can never be larger than 1, because selection is done through the primary key
     }
     
@@ -184,6 +191,9 @@ public class Group
                 .set(Editor.GROUPED_SQL_COL_GROUP_ID, getId())
                 .set(Editor.GROUPED_SQL_COL_RESOURCE_ID, resourceId)
                 .executeUpdate();
+
+        if(affectedRows == 1)
+            editor.fireResourceAddToGroupEvent(this, editor.getResource(resourceId));
         
         return affectedRows == 1; //can never be larger than 1, because selection is done through the primary key
     }
@@ -212,6 +222,6 @@ public class Group
     @Override
     public String toString()
     {
-        return "Group(id=" + getId() + ";name=" + getName() + ")";
+        return getName() + " (" + getId() + ")";
     }
 }

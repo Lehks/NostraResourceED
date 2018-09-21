@@ -1,0 +1,167 @@
+package nostra.resourceed.gui;
+
+import java.io.IOException;
+
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import nostra.resourceed.Group;
+import nostra.resourceed.Resource;
+import nostra.resourceed.Type;
+
+public class ResourceDetailsController
+{
+    ResourceED application;
+
+    @FXML
+    private TextField pathResourceText;
+
+    @FXML
+    private TextField cachedResourceText;
+
+    @FXML
+    private ComboBox<Type> typeResourceChoice;
+
+    @FXML
+    private TableView<Group> groupsTable;
+
+    @FXML
+    private TableColumn<Group, String> groupsTableNameColumn;
+
+    @FXML
+    private TableColumn<Group, Integer> groupsTableIdColumn;
+
+    private Resource resource;
+
+    public static void show(ResourceED application, Resource resource)
+    {
+        try
+        {
+            FXMLLoader loader = new FXMLLoader(
+                    ResourceDetailsController.class.getClassLoader().getResource("ResourceDetails.fxml"));
+
+            Parent parent = loader.load();
+            ResourceDetailsController controller = loader.getController();
+            controller.lateInit(application, resource);
+
+            Scene scene = new Scene(parent);
+            Stage stage = new Stage();
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.initOwner(application.getPrimaryStage());
+            stage.setTitle("Resource Details");
+            stage.setScene(scene);
+            stage.show();
+        } 
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    public void initialize()
+    {
+        groupsTableIdColumn.setCellValueFactory(value -> new SimpleIntegerProperty(value.getValue().getId()).asObject());
+        groupsTableNameColumn.setCellValueFactory(value -> new SimpleStringProperty(value.getValue().getName())); 
+    }
+    
+    public void lateInit(ResourceED application, Resource resource)
+    {
+        this.application = application;
+        this.resource = resource;
+
+        application.getEditor().getGroupEditEvents().add(group -> groupsTable.refresh());
+        
+        groupsTable.getItems().addAll(resource.getGroups());
+        
+        pathResourceText.setText(resource.getPath());
+        cachedResourceText.setText(resource.getCache());
+        typeResourceChoice.getItems().addAll(resource.getEditor().getTypes());
+        typeResourceChoice.getSelectionModel().select(resource.getType());
+
+        application.getEditor().getResourceAddToGroupEvents().add((group, res) -> groupsTable.getItems().add(group));
+        application.getEditor().getResourceRemoveFromGroupEvents().add((group, res) -> groupsTable.getItems().remove(group));
+    }
+    
+    @FXML
+    void addToExGroupOnAction(ActionEvent event)
+    {
+        AddExistingGroupController.show(application, resource);
+    }
+
+    @FXML
+    void addToNewGroupOnAction(ActionEvent event)
+    {
+        AddNewGroupController.show(application, resource);
+    }
+
+    @FXML
+    void editGroupOnAction(ActionEvent event)
+    {
+        Group group = groupsTable.getSelectionModel().getSelectedItem();
+        
+        if(group != null)
+            EditGroupController.show(application, group);
+    }
+
+    @FXML
+    void removeFromGroupOnAction(ActionEvent event)
+    {
+        Group group = groupsTable.getSelectionModel().getSelectedItem();
+        
+        if(group != null)
+            resource.removeFromGroup(group);
+    }
+
+    @FXML
+    void editOnAction(ActionEvent event)
+    {
+        edit();
+        close();
+    }
+
+    @FXML
+    void cancelOnAction(ActionEvent event)
+    {
+        close();
+    }
+
+    private void close()
+    {
+        Stage stage = (Stage) pathResourceText.getScene().getWindow();
+
+        stage.close();
+    }
+
+    private void edit()
+    {
+        String path = pathResourceText.getText();
+        String cached = cachedResourceText.getText();
+
+        if (typeResourceChoice.getValue() == null)
+            Utils.showError("No type", "No type was chosen.", pathResourceText.getScene().getWindow());
+        else
+        {
+            if (!resource.setPath(path))
+                Utils.showError("Error editing resoruce", "Path could not be edited.",
+                        pathResourceText.getScene().getWindow());
+
+            if (!resource.setCached(cached))
+                Utils.showError("Error editing type", "Cached could not be edited.",
+                        pathResourceText.getScene().getWindow());
+
+            if (!resource.setType(typeResourceChoice.getValue()))
+                Utils.showError("No type", "No type was chosen.", pathResourceText.getScene().getWindow());
+        }
+    }
+}

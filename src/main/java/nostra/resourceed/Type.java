@@ -72,6 +72,9 @@ public class Type
                 .where(SQL_COL_ID, getId())
                 .executeUpdate();
         
+        if(affectedRows == 1)
+            editor.fireTypeEditEvent(this);
+        
         return affectedRows == 1; //can never be larger than 1, because selection is done through the primary key
     }
     
@@ -99,6 +102,6 @@ public class Type
     @Override
     public String toString()
     {
-        return "Type(id=" + getId() + ";name=" + getName() + ")";
+        return getName() + " (" + getId() + ")";
     }
 }
