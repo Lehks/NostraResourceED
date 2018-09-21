@@ -3,11 +3,11 @@ package nostra.resourceed.filter;
 import nostra.resourceed.Filter;
 import nostra.resourceed.Resource;
 
-public class ResourceFileExtensionFilter extends Filter
+public class ResourcePathFileExtensionFilter extends Filter
 {
     private final String extension;
 
-    public ResourceFileExtensionFilter(final String extension)
+    public ResourcePathFileExtensionFilter(final String extension)
     {
         this.extension = extension;
     }

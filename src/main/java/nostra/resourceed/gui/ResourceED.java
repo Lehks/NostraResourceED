@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileWriter;
 
 import javafx.application.Application;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -14,7 +16,7 @@ public class ResourceED extends Application
 {
     public final static String CONFIG_FILE_PATH = System.getProperty("user.home") + "/.nostraresourceed/config.json";
     
-    private Editor editor;
+    private ObjectProperty<Editor> editor;
     private MainController controller;
     private Stage primaryStage;
     private File configFile;
@@ -23,7 +25,8 @@ public class ResourceED extends Application
     public void start(Stage primaryStage) throws Exception
     {
         this.primaryStage = primaryStage;
-
+        this.editor = new SimpleObjectProperty<>();
+        
         this.configFile = new File(CONFIG_FILE_PATH);
         
         FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource("Main.fxml"));
@@ -42,8 +45,8 @@ public class ResourceED extends Application
     @Override
     public void stop() throws Exception
     {
-        if(editor != null)
-            editor.close();
+        if(editor.getValue() != null)
+            editor.getValue().close();
         
         FileWriter writer = new FileWriter(configFile);
         
@@ -58,12 +61,17 @@ public class ResourceED extends Application
     
     public Editor getEditor()
     {
-        return editor;
+        return editor.getValue();
     }
     
     public void setEditor(Editor editor)
     {
-        this.editor = editor;
+        this.editor.set(editor);
+    }
+    
+    public ObjectProperty<Editor> editorProperty()
+    {
+        return editor;
     }
     
     public File getConfigFile()

@@ -1,27 +1,39 @@
 package nostra.resourceed.gui;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.Scanner;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.stage.FileChooser;
 import nostra.resourceed.Editor;
+import nostra.resourceed.Filter;
 import nostra.resourceed.Group;
 import nostra.resourceed.Resource;
 import nostra.resourceed.Type;
@@ -29,6 +41,7 @@ import nostra.resourceed.Type;
 public class MainController
 {
     public final static String CONFIG_KEY_RECENT = "recent";
+    public final static String CONFIG_KEY_FILTER = "filters";
     
     private ResourceED application;
 
@@ -72,10 +85,31 @@ public class MainController
 
     @FXML
     private Menu menuRecentlyOpened;
+    
+    @FXML
+    private ComboBox<FilterPreset> filterChoice;
 
+    @FXML
+    private ScrollPane filterOptionPane;
+    
+    @FXML
+    private Button applyFilter;
+
+    @FXML
+    private Button addFilter;
+
+    @FXML
+    private Button removeFilter;
+    
+    private ObservableList<FilterPreset> loadedFilters;
+    
     @FXML
     public void initialize()
     {
+        loadedFilters = filterChoice.getItems();
+        loadedFilters.add(new FilterPreset("<no filter>"));//create empty filter preset to allow removal
+        filterChoice.getSelectionModel().select(0);
+        
         //set cell factories for the tables
         tableColumnIdResource.setCellValueFactory(param -> new SimpleIntegerProperty(param.getValue().getId()).asObject());
         tableColumnPathResource.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getPath()));
@@ -94,11 +128,73 @@ public class MainController
     {
         this.application = application;
         
+        filterChoice.disableProperty().bind(Bindings.isNull(application.editorProperty()));
+        applyFilter.disableProperty().bind(Bindings.isNull(application.editorProperty()));
+        addFilter.disableProperty().bind(Bindings.isNull(application.editorProperty()));
+        removeFilter.disableProperty().bind(Bindings.isNull(application.editorProperty()));
+        
         loadConfigFile();
         
         reloadRecentlyOpened();
+        loadFilters();
     }
 
+    private boolean createDefaultConfig() throws FileNotFoundException
+    {
+        if(!application.getConfigFile().exists())
+        {
+            try
+            {
+                if(!application.getConfigFile().getParentFile().exists())
+                    application.getConfigFile().getParentFile().mkdirs();
+                
+                application.getConfigFile().createNewFile();
+            } 
+            catch (IOException e1)
+            {
+                e1.printStackTrace();
+            }
+        }
+        
+        
+        String path = getClass().getClassLoader().getResource("defaultconfig.json").getFile();
+        InputStream istream = new BufferedInputStream(new FileInputStream(path));
+        
+        OutputStream ostream = new BufferedOutputStream(new FileOutputStream(application.getConfigFile()));
+        
+        int b;
+        
+        try
+        {
+            while((b = istream.read()) != -1)
+            {
+                System.out.println((char)b);
+                ostream.write(b);
+            }
+            
+            return true;
+        } 
+        catch (IOException e1)
+        {
+            e1.printStackTrace();
+        }
+        finally
+        {
+            try
+            {
+                istream.close();
+                ostream.close();
+            } 
+            catch (IOException e1)
+            {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            }
+        }
+        
+        return false;
+    }
+    
     private void loadConfigFile()
     {
 
@@ -126,9 +222,20 @@ public class MainController
             while(scanner.hasNextLine())
                 builder.append(scanner.nextLine());
             
-            scanner.close();
-            
-            configFile = new JSONObject(builder.toString());
+            try
+            {
+                configFile = new JSONObject(builder.toString());
+                scanner.close();
+            } 
+            catch (JSONException e)
+            {
+                scanner.close();
+                
+                if(createDefaultConfig())
+                {
+                    loadConfigFile(); //TODO: avoid endless loop
+                }
+            }
         } 
         catch (FileNotFoundException e)
         {
@@ -140,6 +247,13 @@ public class MainController
     private void reloadRecentlyOpened()
     {
         menuRecentlyOpened.getItems().clear();
+        
+        if(!configFile.has(CONFIG_KEY_RECENT))
+        {
+            //fix the missing attribute
+            configFile.put(CONFIG_KEY_RECENT, new JSONArray());
+            return; //an empty array was just created -> there are no objects to put into the menu
+        }
         
         JSONArray array = configFile.getJSONArray(CONFIG_KEY_RECENT);
 
@@ -165,6 +279,131 @@ public class MainController
         }
     }
     
+    private void loadFilters()
+    {
+        if(!configFile.has(CONFIG_KEY_FILTER))
+        {
+            //fix the missing attribute
+            configFile.put(CONFIG_KEY_FILTER, new JSONArray());
+            
+            return;
+        }
+        
+        JSONArray array = configFile.getJSONArray(CONFIG_KEY_FILTER);
+        
+        try
+        {
+            loadedFilters.addAll(FilterPreset.loadFilters(array));
+        } 
+        catch (FilterPresetException e)
+        {
+            System.err.println("Could not load filters: " + e.getMessage());
+        }
+    }
+    
+    @FXML
+    void filterChoiceOnAction(ActionEvent event)
+    {
+        if(checkIfLoadedAndShow())
+        {
+            FilterPreset preset = filterChoice.getSelectionModel().getSelectedItem();
+            
+            if(preset != null)
+            {
+                filterOptionPane.setContent(preset.getFilterSettingsPane());
+            }
+        }
+    }
+
+    @FXML
+    void applyFilterOnAction(ActionEvent event)
+    {
+        if(filterOptionPane.getContent() != null)
+        {
+            FilterSettingsPane filterSettings = (FilterSettingsPane) filterOptionPane.getContent();
+            
+            try
+            {
+                Filter filter = filterSettings.generateFilter();
+
+                tableViewResource.getItems().clear();
+                
+                System.out.println(filter);
+                
+                if(filter == null)
+                {
+                    //get without filter, this is faster
+                    tableViewResource.getItems().addAll(application.getEditor().getResources());
+                }
+                else
+                {
+                    System.out.println("filtered!");
+                    tableViewResource.getItems().addAll(application.getEditor().getResources(filter));
+                }
+            } 
+            catch (FilterSettingsException e)
+            {
+                Utils.showError("Invalid filter setting", e.getMessage(), 
+                        application.getPrimaryStage());
+            }
+        }
+    }
+
+    @FXML
+    void addFilterOnAction(ActionEvent event) 
+    {
+        AddFilterDialog dialog = new AddFilterDialog(application, loadedFilters);
+        
+        dialog.showAndWait();
+        
+        if(!(dialog.getFilter() == null))
+        {
+            loadedFilters.add(dialog.getFilter());
+            
+            //add to config file
+            dialog.getFilter().addToJSON(configFile.getJSONArray(CONFIG_KEY_FILTER)); 
+            
+            //select last added filter preset
+            filterChoice.getSelectionModel().select(loadedFilters.size() - 1);
+        }
+    }
+
+    @FXML
+    void removeFilterOnAction(ActionEvent event) 
+    {
+        if(filterChoice.getSelectionModel().getSelectedIndex() == 0)
+        {
+            Utils.showError("Can not remove filter", 
+                    "This filter can not be removed.", 
+                    application.getPrimaryStage());
+            
+            return;
+        }
+        
+        FilterPreset filter = filterChoice.getSelectionModel().getSelectedItem();
+        
+        filterChoice.getItems().remove(filter);
+
+        JSONArray filterArray = configFile.getJSONArray(CONFIG_KEY_FILTER);
+        
+        //remove filter by name (names are unique)
+        for(Iterator<Object> i = filterArray.iterator(); i.hasNext();)
+        {
+            Object object = i.next();
+            
+            if(object instanceof JSONObject)
+            {
+                String name = ((JSONObject)object).getString(FilterPreset.FILTER_NAME);
+                
+                if(filter.getName().equals(name))
+                {
+                    i.remove();
+                    return; //there can't be another filter, names are unique
+                }
+            }
+        }
+    }
+
     @FXML
     void addResource(ActionEvent event)
     {
