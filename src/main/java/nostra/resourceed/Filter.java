@@ -16,6 +16,14 @@ public abstract class Filter
         return ret;
     }
     
+    protected static String quotedOrNull(String string)
+    {
+        if(string == null)
+            return "NULL";
+        else
+            return "\"" + string + "\""; 
+    }
+    
     public Filter()
     {
         this.children = new LinkedList<Filter>();

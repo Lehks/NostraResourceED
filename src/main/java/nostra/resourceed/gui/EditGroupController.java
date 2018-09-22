@@ -18,38 +18,38 @@ public class EditGroupController
 
     @FXML
     private TextField nameText;
-    
+
     private Group group;
 
     public static void show(ResourceED application, Group group)
     {
         try
         {
-            FXMLLoader loader = new FXMLLoader(EditGroupController.class.getClassLoader().getResource("EditGroup.fxml"));
-            
+            FXMLLoader loader = new FXMLLoader(ResourceLoader.getUrl("EditGroup.fxml"));
+
             Parent parent = loader.load();
             EditGroupController controller = loader.getController();
             controller.lateInit(application, group);
-            
+
             Scene scene = new Scene(parent);
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.initOwner(application.getPrimaryStage());
-            stage.setTitle("Edit Group");
+            stage.setTitle(Messages.get("EditGroupController.StageTitle"));
             stage.setScene(scene);
             stage.show();
-        } 
+        }
         catch (IOException e)
         {
             e.printStackTrace();
         }
     }
-    
+
     public void lateInit(ResourceED application, Group group)
     {
         this.application = application;
         this.group = group;
-        
+
         nameText.setText(group.getName());
     }
 
@@ -75,10 +75,10 @@ public class EditGroupController
 
     private void edit()
     {
-        String name = nameText.getText();
-        
+        String name = Utils.nullIfEmpty(nameText.getText());
+
         if (!group.setName(name))
-            Utils.showError("Error editing grop", "Groupname could not be editied.",
-                    nameText.getScene().getWindow());
+            Utils.showError(Messages.get("Msg.Error.Group.CanNotEdit.Header"),
+                    Messages.get("Groupname could not be editied."), nameText.getScene().getWindow());
     }
 }

@@ -3,10 +3,13 @@ package nostra.resourceed;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.AccessDeniedException;
+import java.nio.file.FileAlreadyExistsException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -14,12 +17,21 @@ import java.util.function.Consumer;
 public class Editor implements Closeable
 {
     /** Represents the Grouped Table name inside the database. */
-    public static final String GROUPED_SQL_TABLE = "resourceGroups";
+    public static final String GROUPS_RESOURCES_SQL_TABLE = "GroupsResources";
     /** Represents the Grouped ResourceId column name inside the database. */
-    public static final String GROUPED_SQL_COL_RESOURCE_ID = "resourceID";
+    public static final String GROUPS_RESOURCES_SQL_COL_RESOURCE_ID = "ResourcesID";
     /** Represents the Grouped GroupId column name inside the database. */
-    public static final String GROUPED_SQL_COL_GROUP_ID = "groupID";
+    public static final String GROUPS_RESOURCES_SQL_COL_GROUP_ID = "GroupsID";
 
+    public static final String GROUPS_RESOURCES_SQL_CREATE_TABLE =
+            "CREATE TABLE IF NOT EXISTS `" + GROUPS_RESOURCES_SQL_TABLE + "` (" + 
+            "   `" + GROUPS_RESOURCES_SQL_COL_RESOURCE_ID + "` INTEGER NOT NULL," + 
+            "   `" + GROUPS_RESOURCES_SQL_COL_GROUP_ID    + "` INTEGER NOT NULL," + 
+            "   PRIMARY KEY(`" + GROUPS_RESOURCES_SQL_COL_RESOURCE_ID + "`, `" + GROUPS_RESOURCES_SQL_COL_GROUP_ID + "`)," + 
+            "   FOREIGN KEY(`" + GROUPS_RESOURCES_SQL_COL_RESOURCE_ID 
+                + "`) REFERENCES `" + Resource.SQL_TABLE + "`(`" + Resource.SQL_COL_ID + "`)," +
+            "   FOREIGN KEY(`" + GROUPS_RESOURCES_SQL_COL_GROUP_ID 
+                + "`) REFERENCES `" + Group.SQL_TABLE + "`(`" + Group.SQL_COL_ID + "`));";
     
     /**
      * The database to edit.
@@ -41,6 +53,41 @@ public class Editor implements Closeable
     private List<BiConsumer<Group, Resource>> resourceAddToGroupEvents;
     private List<BiConsumer<Group, Resource>> resourceRemoveFromGroupEvents;
     
+    public static Editor newDatabase(File file) throws SQLException, 
+                                                        AccessDeniedException, 
+                                                        FileAlreadyExistsException, 
+                                                        IOException
+    {
+        if(file.exists())
+            throw new FileAlreadyExistsException(file.toString());
+        
+        if(!file.getParentFile().exists())
+        {
+            if(!file.getParentFile().mkdirs())
+                throw new AccessDeniedException(file.toString());
+        }
+        
+        file.createNewFile();
+            
+        Database database = new Database(file.getAbsolutePath());
+
+        PreparedStatement stmt = database.prepQuery(Type.SQL_CREATE_TABLE);
+        stmt.execute();
+
+        stmt = database.prepQuery(Group.SQL_CREATE_TABLE);
+        stmt.execute();
+        
+        stmt = database.prepQuery(Resource.SQL_CREATE_TABLE);
+        stmt.execute();
+
+        stmt = database.prepQuery(GROUPS_RESOURCES_SQL_CREATE_TABLE);
+        stmt.execute();
+
+        Editor editor = new Editor(database);
+        
+        return editor;
+    }
+    
     public Editor(String databasePath) throws SQLException
     {
         this(new Database(databasePath));
@@ -51,9 +98,12 @@ public class Editor implements Closeable
         this(database.getAbsolutePath());
     }
     
-    public Editor(Database database)
+    public Editor(Database database) throws SQLException
     {
         this.database = database;
+        
+        checkDatabase();
+        
         this.resourceAddEvents = new ArrayList<>();
         this.resourceEditEvents = new ArrayList<>();
         this.resourceRemoveEvents = new ArrayList<>();
@@ -68,6 +118,57 @@ public class Editor implements Closeable
         
         this.resourceAddToGroupEvents = new ArrayList<>();
         this.resourceRemoveFromGroupEvents = new ArrayList<>();
+    }
+    
+    private void checkDatabase() throws SQLException
+    {
+        checkIfTableExists(Resource.SQL_TABLE);
+        checkIfTableHasColumns(Resource.SQL_TABLE, Resource.SQL_COL_ID, 
+                Resource.SQL_COL_PATH, Resource.SQL_COL_CACHED, Resource.SQL_COL_TYPE);
+        
+        checkIfTableExists(Type.SQL_TABLE);
+        checkIfTableHasColumns(Type.SQL_TABLE, Type.SQL_COL_ID, Type.SQL_COL_NAME,Type.SQL_COL_DESCRIPTION);
+        
+        checkIfTableExists(Group.SQL_TABLE);
+        checkIfTableHasColumns(Group.SQL_TABLE, Group.SQL_COL_ID, Group.SQL_COL_NAME);
+        
+        checkIfTableExists(GROUPS_RESOURCES_SQL_TABLE);
+        checkIfTableHasColumns(GROUPS_RESOURCES_SQL_TABLE, GROUPS_RESOURCES_SQL_COL_GROUP_ID, 
+                GROUPS_RESOURCES_SQL_COL_RESOURCE_ID);
+    }
+    
+    private void checkIfTableExists(String table) throws SQLException
+    {
+        PreparedStatement stmt = database.prepQuery("SELECT * FROM sqlite_master WHERE type = 'table' AND name = ?");
+        stmt.setString(1, table);
+        
+        ResultSet result = stmt.executeQuery();
+        
+        if(!result.next())
+        {
+            throw new SQLException("Database does not contain table \"" + table + "\"");
+        }
+    }
+    
+    private void checkIfTableHasColumns(String table, String... columns) throws SQLException
+    {
+        PreparedStatement stmt = database.prepQuery("PRAGMA table_info(" + table + ")");
+        
+        ResultSet result = stmt.executeQuery();
+        
+        List<String> resultColumns = new ArrayList<>();
+        
+        while(result.next())
+        {
+            resultColumns.add(result.getString(2));
+        }
+        
+        //check if the sizes match and all requested columns are present
+        if(!(resultColumns.size() == columns.length) && 
+                resultColumns.containsAll(Arrays.asList(columns)))
+        {
+            throw new SQLException("The table \"" + table + "\" has a wrong schema.");
+        }
     }
     
     public Database getDatabase()
@@ -177,12 +278,6 @@ public class Editor implements Closeable
     
     public Resource addResource(String path, String cached, int typeId)
     {
-        //TODO: errors like this should be handled by the database, but the interface does not support that yet
-        if(path == null)
-            throw new NullPointerException("The path must not be null.");
-        if(cached == null)
-            throw new NullPointerException("The cache must not be null."); //TODO: cache sometimes needs to be ŃULL!
-
         QueryBuilder query = new QueryBuilder(database);
         
         int affectedRows = query.insert(Resource.SQL_TABLE)
@@ -209,16 +304,13 @@ public class Editor implements Closeable
         return addResource(path, cached, type.getId());
     }
     
-    public Type addType(String name)
+    public Type addType(String name, String description)
     {
-        //TODO: errors like this should be handled by the database, but the interface does not support that yet
-        if(name == null)
-            throw new NullPointerException("The name must not be null.");
-        
         QueryBuilder query = new QueryBuilder(database);
         
         int affectedRows = query.insert(Type.SQL_TABLE)
             .set(Type.SQL_COL_NAME, name)
+            .set(Type.SQL_COL_DESCRIPTION, description)
             .executeUpdate();
         
         //affected rows is 0, nothing was inserted
@@ -236,10 +328,6 @@ public class Editor implements Closeable
 
     public Group addGroup(String name)
     {
-        //TODO: errors like this should be handled by the database, but the interface does not support that yet
-        if(name == null)
-            throw new NullPointerException("The name must not be null.");
-        
         QueryBuilder query = new QueryBuilder(database);
         
         int affectedRows = query.insert(Group.SQL_TABLE)
@@ -292,6 +380,8 @@ public class Editor implements Closeable
     {
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT ")
+            .append(Resource.SQL_TABLE)
+            .append(".")
             .append(Resource.SQL_COL_ID)
             .append(" FROM ")
             .append(Resource.SQL_TABLE);
@@ -309,22 +399,22 @@ public class Editor implements Closeable
             .append(Type.SQL_COL_ID);
             
         sql.append(" LEFT JOIN ")
-            .append(GROUPED_SQL_TABLE)
+            .append(GROUPS_RESOURCES_SQL_TABLE)
             .append(" ON ")
             .append(Resource.SQL_TABLE)
             .append(".")
             .append(Resource.SQL_COL_ID)
             .append(" = ")
-            .append(GROUPED_SQL_TABLE)
+            .append(GROUPS_RESOURCES_SQL_TABLE)
             .append(".")
-            .append(GROUPED_SQL_COL_RESOURCE_ID);
+            .append(GROUPS_RESOURCES_SQL_COL_RESOURCE_ID);
 
         sql.append(" LEFT JOIN ")
             .append(Group.SQL_TABLE)
             .append(" ON ")
-            .append(GROUPED_SQL_TABLE)
+            .append(GROUPS_RESOURCES_SQL_TABLE)
             .append(".")
-            .append(GROUPED_SQL_COL_GROUP_ID)
+            .append(GROUPS_RESOURCES_SQL_COL_GROUP_ID)
             .append(" = ")
             .append(Group.SQL_TABLE)
             .append(".")

@@ -8,13 +8,19 @@ import java.util.List;
 public class Group
 {
     /** Represents the Group Table name inside the database. */
-    public static final String SQL_TABLE = "resourceGroup";
+    public static final String SQL_TABLE = "Groups";
+    /** Represents the Group Id column name inside the database. */
+    public static final String SQL_COL_ID = "ID";
     /** Represents the Group Name column name inside the database. */
     public static final String SQL_COL_NAME = "name";
-    /** Represents the Group Id column name inside the database. */
-    public static final String SQL_COL_ID = "gid";
 
-    Editor editor;
+    public static final String SQL_CREATE_TABLE = 
+            "CREATE TABLE IF NOT EXISTS " + SQL_TABLE + "(" +
+            "   " + SQL_COL_ID   + " INTEGER NOT NULL,    " +
+            "   " + SQL_COL_NAME + " TEXT NOT NULL UNIQUE," +
+            "   PRIMARY KEY(" + SQL_COL_ID + "));";
+    
+    private Editor editor;
     
     private final int id;
     
@@ -88,9 +94,9 @@ public class Group
     {
         QueryBuilder builder = new QueryBuilder(editor.getDatabase());
         
-        ResultSet result = builder.select(Editor.GROUPED_SQL_COL_RESOURCE_ID)
-                                    .from(Editor.GROUPED_SQL_TABLE)
-                                    .where(Editor.GROUPED_SQL_COL_GROUP_ID, getId())
+        ResultSet result = builder.select(Editor.GROUPS_RESOURCES_SQL_COL_RESOURCE_ID)
+                                    .from(Editor.GROUPS_RESOURCES_SQL_TABLE)
+                                    .where(Editor.GROUPS_RESOURCES_SQL_COL_GROUP_ID, getId())
                                     .executeQuery();
         
         try
@@ -119,9 +125,9 @@ public class Group
         QueryBuilder builder = new QueryBuilder(editor.getDatabase());
         
         //TODO: optimize with AND (WHERE groupID = id AND resourceID = resourceID)
-        ResultSet result = builder.select(Editor.GROUPED_SQL_COL_RESOURCE_ID)
-                                    .from(Editor.GROUPED_SQL_TABLE)
-                                    .where(Editor.GROUPED_SQL_COL_GROUP_ID, getId())
+        ResultSet result = builder.select(Editor.GROUPS_RESOURCES_SQL_COL_RESOURCE_ID)
+                                    .from(Editor.GROUPS_RESOURCES_SQL_TABLE)
+                                    .where(Editor.GROUPS_RESOURCES_SQL_COL_GROUP_ID, getId())
                                     .executeQuery();
         
         try
@@ -166,9 +172,9 @@ public class Group
         
         int affectedRows = builder
                 .delete()
-                .from(Editor.GROUPED_SQL_TABLE)
-                .where(Editor.GROUPED_SQL_COL_RESOURCE_ID + " = " + resourceId //bit of a hack to use AND
-                        + " AND " + Editor.GROUPED_SQL_COL_GROUP_ID, getId())
+                .from(Editor.GROUPS_RESOURCES_SQL_TABLE)
+                .where(Editor.GROUPS_RESOURCES_SQL_COL_RESOURCE_ID + " = " + resourceId //bit of a hack to use AND
+                        + " AND " + Editor.GROUPS_RESOURCES_SQL_COL_GROUP_ID, getId())
                 .executeUpdate();
 
         if(affectedRows == 1)
@@ -187,9 +193,9 @@ public class Group
         QueryBuilder builder = new QueryBuilder(editor.getDatabase());
         
         int affectedRows = builder
-                .insert(Editor.GROUPED_SQL_TABLE)
-                .set(Editor.GROUPED_SQL_COL_GROUP_ID, getId())
-                .set(Editor.GROUPED_SQL_COL_RESOURCE_ID, resourceId)
+                .insert(Editor.GROUPS_RESOURCES_SQL_TABLE)
+                .set(Editor.GROUPS_RESOURCES_SQL_COL_GROUP_ID, getId())
+                .set(Editor.GROUPS_RESOURCES_SQL_COL_RESOURCE_ID, resourceId)
                 .executeUpdate();
 
         if(affectedRows == 1)

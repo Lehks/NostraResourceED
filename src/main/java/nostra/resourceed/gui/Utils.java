@@ -14,4 +14,12 @@ public abstract class Utils
         alert.setContentText(body);
         alert.showAndWait();
     }
+    
+    public static String nullIfEmpty(String string)
+    {
+        if(string != null && !string.trim().isEmpty())
+            return string;
+        else
+            return null;
+    }
 }

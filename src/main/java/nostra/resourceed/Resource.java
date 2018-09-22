@@ -8,16 +8,24 @@ import java.util.List;
 public class Resource
 {
     /** Represents the Resource Table name inside the database. */
-    public static final String SQL_TABLE = "resource";
+    public static final String SQL_TABLE = "Resources";
     /** Represents the Resource Id column name inside the database. */
-    public static final String SQL_COL_ID = "rid";
+    public static final String SQL_COL_ID = "ID";
     /** Represents the Resource Path column name inside the database. */
     public static final String SQL_COL_PATH = "path";
     /** Represents the Resource Cache column name inside the database. */
     public static final String SQL_COL_CACHED = "cached";
     /** Represents the Resource Type column name inside the database.  */
-    public static final String SQL_COL_TYPE = "type";
+    public static final String SQL_COL_TYPE = "TypesID";
 
+    public final static String SQL_CREATE_TABLE  =
+            "CREATE TABLE IF NOT EXISTS `" + SQL_TABLE + "` (" + 
+            "   `" + SQL_COL_ID     + "` INTEGER NOT NULL," + 
+            "   `" + SQL_COL_PATH   + "` TEXT NOT NULL CHECK(" + SQL_COL_PATH + " NOT LIKE " + SQL_COL_CACHED + ") UNIQUE," + 
+            "   `" + SQL_COL_CACHED + "` TEXT CHECK(" + SQL_COL_CACHED + " NOT LIKE 'NULL')," + 
+            "   `" + SQL_COL_TYPE   + "` INTEGER NOT NULL," + 
+            "   PRIMARY KEY(`" + SQL_COL_ID + "`)," + 
+            "   FOREIGN KEY(`" + SQL_COL_TYPE + "`) REFERENCES `" + Type.SQL_TABLE + "`(`" + Type.SQL_COL_ID + "`) ON DELETE NO ACTION ON UPDATE CASCADE);";
     
     private Editor editor;
     
@@ -202,9 +210,9 @@ public class Resource
     {
         QueryBuilder builder = new QueryBuilder(editor.getDatabase());
         
-        ResultSet result = builder.select(Editor.GROUPED_SQL_COL_GROUP_ID)
-                                    .from(Editor.GROUPED_SQL_TABLE)
-                                    .where(Editor.GROUPED_SQL_COL_RESOURCE_ID, getId())
+        ResultSet result = builder.select(Editor.GROUPS_RESOURCES_SQL_COL_GROUP_ID)
+                                    .from(Editor.GROUPS_RESOURCES_SQL_TABLE)
+                                    .where(Editor.GROUPS_RESOURCES_SQL_COL_RESOURCE_ID, getId())
                                     .executeQuery();
         
         try

@@ -20,6 +20,9 @@ public class ResourceCachedFileExtensionFilter extends Filter
     @Override
     public String generateSQLImpl()
     {
-        return Resource.SQL_TABLE + "." + Resource.SQL_COL_CACHED + " LIKE '%." + extension + "'";
+        if(extension != null)
+            return Resource.SQL_TABLE + "." + Resource.SQL_COL_CACHED + " LIKE '%." + extension + "'";
+        else
+            return "1 = 2"; //return false
     }
 }

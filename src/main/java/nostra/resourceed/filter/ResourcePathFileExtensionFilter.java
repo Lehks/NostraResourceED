@@ -20,6 +20,9 @@ public class ResourcePathFileExtensionFilter extends Filter
     @Override
     public String generateSQLImpl()
     {
-        return Resource.SQL_TABLE + "." + Resource.SQL_COL_PATH + " LIKE '%." + extension + "'";
+        if(extension != null)
+            return Resource.SQL_TABLE + "." + Resource.SQL_COL_PATH + " LIKE '%." + extension + "'";
+        else
+            return "1 = 2"; //return false
     }
 }

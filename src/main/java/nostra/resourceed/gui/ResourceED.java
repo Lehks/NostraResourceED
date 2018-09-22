@@ -2,6 +2,7 @@ package nostra.resourceed.gui;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 
 import javafx.application.Application;
 import javafx.beans.property.ObjectProperty;
@@ -29,7 +30,7 @@ public class ResourceED extends Application
         
         this.configFile = new File(CONFIG_FILE_PATH);
         
-        FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource("Main.fxml"));
+        FXMLLoader loader = new FXMLLoader(ResourceLoader.getUrl("Main.fxml"));
         Parent root = loader.load();
         
         controller = loader.getController();
@@ -42,16 +43,29 @@ public class ResourceED extends Application
         primaryStage.show();
     }
 
+    public boolean saveConfigFile()
+    {
+        try
+        {
+            FileWriter writer = new FileWriter(configFile);
+            
+            writer.write(controller.getConfigFile().toString());
+            writer.close();
+            return true;
+        }
+        catch (IOException e) 
+        {
+            return false;
+        }
+    }
+    
     @Override
     public void stop() throws Exception
     {
         if(editor.getValue() != null)
             editor.getValue().close();
         
-        FileWriter writer = new FileWriter(configFile);
-        
-        writer.write(controller.getConfigFile().toString());
-        writer.close();
+        saveConfigFile();
     }
     
     public Stage getPrimaryStage()

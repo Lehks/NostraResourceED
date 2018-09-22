@@ -47,8 +47,7 @@ public class ResourceDetailsController
     {
         try
         {
-            FXMLLoader loader = new FXMLLoader(
-                    ResourceDetailsController.class.getClassLoader().getResource("ResourceDetails.fxml"));
+            FXMLLoader loader = new FXMLLoader(ResourceLoader.getUrl("ResourceDetails.fxml"));
 
             Parent parent = loader.load();
             ResourceDetailsController controller = loader.getController();
@@ -58,10 +57,10 @@ public class ResourceDetailsController
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.initOwner(application.getPrimaryStage());
-            stage.setTitle("Resource Details");
+            stage.setTitle(Messages.get("ResourceDetailsController.StageTitle"));
             stage.setScene(scene);
             stage.show();
-        } 
+        }
         catch (IOException e)
         {
             e.printStackTrace();
@@ -71,28 +70,32 @@ public class ResourceDetailsController
     @FXML
     public void initialize()
     {
-        groupsTableIdColumn.setCellValueFactory(value -> new SimpleIntegerProperty(value.getValue().getId()).asObject());
-        groupsTableNameColumn.setCellValueFactory(value -> new SimpleStringProperty(value.getValue().getName())); 
+        groupsTableIdColumn
+                .setCellValueFactory(value -> new SimpleIntegerProperty(value.getValue().getId()).asObject());
+        groupsTableNameColumn
+                .setCellValueFactory(value -> new SimpleStringProperty(value.getValue().getName()));
     }
-    
+
     public void lateInit(ResourceED application, Resource resource)
     {
         this.application = application;
         this.resource = resource;
 
         application.getEditor().getGroupEditEvents().add(group -> groupsTable.refresh());
-        
+
         groupsTable.getItems().addAll(resource.getGroups());
-        
+
         pathResourceText.setText(resource.getPath());
         cachedResourceText.setText(resource.getCache());
         typeResourceChoice.getItems().addAll(resource.getEditor().getTypes());
         typeResourceChoice.getSelectionModel().select(resource.getType());
 
-        application.getEditor().getResourceAddToGroupEvents().add((group, res) -> groupsTable.getItems().add(group));
-        application.getEditor().getResourceRemoveFromGroupEvents().add((group, res) -> groupsTable.getItems().remove(group));
+        application.getEditor().getResourceAddToGroupEvents()
+                .add((group, res) -> groupsTable.getItems().add(group));
+        application.getEditor().getResourceRemoveFromGroupEvents()
+                .add((group, res) -> groupsTable.getItems().remove(group));
     }
-    
+
     @FXML
     void addToExGroupOnAction(ActionEvent event)
     {
@@ -109,8 +112,8 @@ public class ResourceDetailsController
     void editGroupOnAction(ActionEvent event)
     {
         Group group = groupsTable.getSelectionModel().getSelectedItem();
-        
-        if(group != null)
+
+        if (group != null)
             EditGroupController.show(application, group);
     }
 
@@ -118,8 +121,8 @@ public class ResourceDetailsController
     void removeFromGroupOnAction(ActionEvent event)
     {
         Group group = groupsTable.getSelectionModel().getSelectedItem();
-        
-        if(group != null)
+
+        if (group != null)
             resource.removeFromGroup(group);
     }
 
@@ -145,23 +148,29 @@ public class ResourceDetailsController
 
     private void edit()
     {
-        String path = pathResourceText.getText();
-        String cached = cachedResourceText.getText();
+        String path = Utils.nullIfEmpty(pathResourceText.getText());
+        String cached = Utils.nullIfEmpty(cachedResourceText.getText());
 
         if (typeResourceChoice.getValue() == null)
-            Utils.showError("No type", "No type was chosen.", pathResourceText.getScene().getWindow());
+            Utils.showError(Messages.get("Msg.Error.Type.NothingChosen.Header"),
+                    Messages.get("Msg.Error.Type.NothingChosen.Body"),
+                    pathResourceText.getScene().getWindow());
         else
         {
             if (!resource.setPath(path))
-                Utils.showError("Error editing resoruce", "Path could not be edited.",
+                Utils.showError(Messages.get("Msg.Error.Resource.CanNotEdit.Header"),
+                        Messages.get("Msg.Error.Resource.CanNotEdit.Path.Body"),
                         pathResourceText.getScene().getWindow());
 
             if (!resource.setCached(cached))
-                Utils.showError("Error editing type", "Cached could not be edited.",
+                Utils.showError(Messages.get("Msg.Error.Resource.CanNotEdit.Header"),
+                        Messages.get("Msg.Error.Resource.CanNotEdit.Cached.Body"),
                         pathResourceText.getScene().getWindow());
 
             if (!resource.setType(typeResourceChoice.getValue()))
-                Utils.showError("No type", "No type was chosen.", pathResourceText.getScene().getWindow());
+                Utils.showError(Messages.get("Msg.Error.Type.NothingChosen.Header"),
+                        Messages.get("Msg.Error.Type.NothingChosen.Body"),
+                        pathResourceText.getScene().getWindow());
         }
     }
 }

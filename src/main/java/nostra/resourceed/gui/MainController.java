@@ -9,6 +9,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.AccessDeniedException;
+import java.nio.file.FileAlreadyExistsException;
 import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.Scanner;
@@ -21,6 +23,7 @@ import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -30,7 +33,9 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
+import javafx.scene.control.Tooltip;
 import javafx.stage.FileChooser;
 import nostra.resourceed.Editor;
 import nostra.resourceed.Filter;
@@ -40,13 +45,13 @@ import nostra.resourceed.Type;
 
 public class MainController
 {
-    public final static String CONFIG_KEY_RECENT = "recent";
-    public final static String CONFIG_KEY_FILTER = "filters";
-    
+    public final static String CONFIG_KEY_RECENT = "recent"; //$NON-NLS-1$
+    public final static String CONFIG_KEY_FILTER = "filters"; //$NON-NLS-1$
+
     private ResourceED application;
 
     private JSONObject configFile;
-    
+
     @FXML
     private TableView<Resource> tableViewResource;
 
@@ -84,14 +89,17 @@ public class MainController
     private TableColumn<Type, String> tableColumnNameType;
 
     @FXML
+    private TableColumn<Type, String> tableColumnDescriptionType;
+
+    @FXML
     private Menu menuRecentlyOpened;
-    
+
     @FXML
     private ComboBox<FilterPreset> filterChoice;
 
     @FXML
     private ScrollPane filterOptionPane;
-    
+
     @FXML
     private Button applyFilter;
 
@@ -100,80 +108,119 @@ public class MainController
 
     @FXML
     private Button removeFilter;
-    
+
     private ObservableList<FilterPreset> loadedFilters;
+
+    private StringProperty makeProperNull(String string)
+    {
+        if(string == null)
+            return new SimpleStringProperty("<NULL>");
+        else
+            return new SimpleStringProperty(string);
+    }
     
     @FXML
     public void initialize()
     {
         loadedFilters = filterChoice.getItems();
-        loadedFilters.add(new FilterPreset("<no filter>"));//create empty filter preset to allow removal
-        filterChoice.getSelectionModel().select(0);
         
-        //set cell factories for the tables
-        tableColumnIdResource.setCellValueFactory(param -> new SimpleIntegerProperty(param.getValue().getId()).asObject());
-        tableColumnPathResource.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getPath()));
-        tableColumnCachedResource.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getCache()));
-        tableColumnTypeNameResource.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getType().getName()));
-        tableColumnTypeIdResource.setCellValueFactory(param -> new SimpleIntegerProperty(param.getValue().getType().getId()).asObject());
+        // create empty filter preset to 
+        loadedFilters.add(new FilterPreset(Messages.get("MainController.Filter.NoFilter.Name"))); //$NON-NLS-1$
+                                                           // allow removal
+        filterChoice.getSelectionModel().select(0);
 
-        tableColumnNameType.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getName()));
-        tableColumnIdType.setCellValueFactory(param -> new SimpleIntegerProperty(param.getValue().getId()).asObject());
+        // set cell factories for the tables
+        tableColumnIdResource
+                .setCellValueFactory(param -> new SimpleIntegerProperty(param.getValue().getId()).asObject());
+        tableColumnPathResource
+                .setCellValueFactory(param -> makeProperNull(param.getValue().getPath()));
+        tableColumnCachedResource
+                .setCellValueFactory(param -> makeProperNull(param.getValue().getCache()));
+        tableColumnTypeNameResource
+                .setCellValueFactory(param -> makeProperNull(param.getValue().getType().getName()));
+        tableColumnTypeIdResource.setCellValueFactory(
+                param -> new SimpleIntegerProperty(param.getValue().getType().getId()).asObject());
 
-        tableColumnNameGroup.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getName()));
-        tableColumnIdGroup.setCellValueFactory(param -> new SimpleIntegerProperty(param.getValue().getId()).asObject());
+        tableColumnNameType
+                .setCellValueFactory(param -> makeProperNull(param.getValue().getName()));
+        tableColumnIdType
+                .setCellValueFactory(param -> new SimpleIntegerProperty(param.getValue().getId()).asObject());
+        tableColumnDescriptionType
+                .setCellValueFactory(param -> makeProperNull(param.getValue().getDescription()));
+
+        tableColumnNameGroup
+                .setCellValueFactory(param -> makeProperNull(param.getValue().getName()));
+        tableColumnIdGroup
+                .setCellValueFactory(param -> new SimpleIntegerProperty(param.getValue().getId()).asObject());
+
+        // set description tooltip on type rows
+        tableViewType.setRowFactory(tv -> new TableRow<Type>()
+        {
+            Tooltip tooltip = new Tooltip();
+
+            @Override
+            public void updateItem(Type item, boolean empty)
+            {
+                super.updateItem(item, empty);
+
+                if (item == null)
+                    setTooltip(null);
+                else
+                {
+                    tooltip.setText(item.getDescription());
+                    setTooltip(tooltip);
+                }
+            }
+        });
     }
 
     public void lateInit(ResourceED application)
     {
         this.application = application;
-        
+
         filterChoice.disableProperty().bind(Bindings.isNull(application.editorProperty()));
         applyFilter.disableProperty().bind(Bindings.isNull(application.editorProperty()));
         addFilter.disableProperty().bind(Bindings.isNull(application.editorProperty()));
         removeFilter.disableProperty().bind(Bindings.isNull(application.editorProperty()));
-        
+
         loadConfigFile();
-        
+
         reloadRecentlyOpened();
         loadFilters();
     }
 
     private boolean createDefaultConfig() throws FileNotFoundException
     {
-        if(!application.getConfigFile().exists())
+        if (!application.getConfigFile().exists())
         {
             try
             {
-                if(!application.getConfigFile().getParentFile().exists())
+                if (!application.getConfigFile().getParentFile().exists())
                     application.getConfigFile().getParentFile().mkdirs();
-                
+
                 application.getConfigFile().createNewFile();
-            } 
+            }
             catch (IOException e1)
             {
                 e1.printStackTrace();
             }
         }
-        
-        
-        String path = getClass().getClassLoader().getResource("defaultconfig.json").getFile();
-        InputStream istream = new BufferedInputStream(new FileInputStream(path));
-        
+
+        InputStream istream = new BufferedInputStream(ResourceLoader.getStream("defaultconfig.json")); //$NON-NLS-1$
+
         OutputStream ostream = new BufferedOutputStream(new FileOutputStream(application.getConfigFile()));
-        
+
         int b;
-        
+
         try
         {
-            while((b = istream.read()) != -1)
+            while ((b = istream.read()) != -1)
             {
-                System.out.println((char)b);
                 ostream.write(b);
             }
-            
+
             return true;
-        } 
+        }
         catch (IOException e1)
         {
             e1.printStackTrace();
@@ -184,131 +231,154 @@ public class MainController
             {
                 istream.close();
                 ostream.close();
-            } 
+            }
             catch (IOException e1)
             {
-                // TODO Auto-generated catch block
                 e1.printStackTrace();
             }
         }
-        
+
         return false;
     }
-    
+
     private void loadConfigFile()
     {
 
-        if(!application.getConfigFile().exists())
+        if (!application.getConfigFile().exists())
         {
             try
             {
-                if(!application.getConfigFile().getParentFile().exists())
+                if (!application.getConfigFile().getParentFile().exists())
                     application.getConfigFile().getParentFile().mkdirs();
-                
+
                 application.getConfigFile().createNewFile();
-            } 
+            }
             catch (IOException e1)
             {
                 e1.printStackTrace();
             }
         }
-        
+
         try
         {
             Scanner scanner = new Scanner(new FileInputStream(application.getConfigFile()));
-            
+
             StringBuilder builder = new StringBuilder();
-            
-            while(scanner.hasNextLine())
+
+            while (scanner.hasNextLine())
                 builder.append(scanner.nextLine());
-            
+
             try
             {
                 configFile = new JSONObject(builder.toString());
                 scanner.close();
-            } 
+            }
             catch (JSONException e)
             {
                 scanner.close();
-                
-                if(createDefaultConfig())
+
+                if (createDefaultConfig())
                 {
-                    loadConfigFile(); //TODO: avoid endless loop
+                    loadConfigFile(); // TODO: avoid endless loop
                 }
             }
-        } 
+        }
         catch (FileNotFoundException e)
         {
             e.printStackTrace();
         }
-        
+
     }
-    
+
     private void reloadRecentlyOpened()
     {
         menuRecentlyOpened.getItems().clear();
-        
-        if(!configFile.has(CONFIG_KEY_RECENT))
+
+        if (!configFile.has(CONFIG_KEY_RECENT))
         {
-            //fix the missing attribute
+            // fix the missing attribute
             configFile.put(CONFIG_KEY_RECENT, new JSONArray());
-            return; //an empty array was just created -> there are no objects to put into the menu
+            return; // an empty array was just created -> there are no objects to put into the menu
         }
-        
+
         JSONArray array = configFile.getJSONArray(CONFIG_KEY_RECENT);
 
-        for(Object object: array)
+        for (Object object : array)
         {
-            //ignore bad entries; aka. entries with wrong type(s)
-            if(object instanceof String)
+            // ignore bad entries; aka. entries with wrong type(s)
+            if (object instanceof String)
             {
-                MenuItem item = new MenuItem((String)object);
-                
-                //action to reload with appropriate database
+                MenuItem item = new MenuItem((String) object);
+
+                // action to reload with appropriate database
                 item.setOnAction(event ->
                 {
-                    String path = ((MenuItem)event.getSource()).getText();
+                    String path = ((MenuItem) event.getSource()).getText();
                     File file = new File(path);
-                    
-                    registerEditor(file);
+
+                    registerExistingEditor(file);
                     addRecentFilesEntry(file);
                 });
-                
+
                 menuRecentlyOpened.getItems().add(0, item);
             }
         }
     }
-    
+
     private void loadFilters()
     {
-        if(!configFile.has(CONFIG_KEY_FILTER))
+        if (!configFile.has(CONFIG_KEY_FILTER))
         {
-            //fix the missing attribute
+            // fix the missing attribute
             configFile.put(CONFIG_KEY_FILTER, new JSONArray());
-            
+
             return;
         }
-        
+
         JSONArray array = configFile.getJSONArray(CONFIG_KEY_FILTER);
-        
+
         try
         {
             loadedFilters.addAll(FilterPreset.loadFilters(array));
-        } 
+        }
         catch (FilterPresetException e)
         {
-            System.err.println("Could not load filters: " + e.getMessage());
+            System.err.println("Could not load filters: " + e.getMessage()); //$NON-NLS-1$
+        }
+    }
+
+    @FXML
+    void addResourceToNewGroup(ActionEvent event)
+    {
+        if (checkIfLoadedAndShow())
+        {
+            Resource resource = tableViewResource.getSelectionModel().getSelectedItem();
+            
+            if(resource != null)
+                AddNewGroupController.show(application, resource);
+        }
+    }
+
+    @FXML
+    void addResourceToExistingGroup(ActionEvent event)
+    {
+        if (checkIfLoadedAndShow())
+        {
+            Resource resource = tableViewResource.getSelectionModel().getSelectedItem();
+            
+            if(resource != null)
+                AddExistingGroupController.show(application, resource);
         }
     }
     
     @FXML
     void filterChoiceOnAction(ActionEvent event)
     {
-        if(checkIfLoadedAndShow())
+        if (checkIfLoadedAndShow())
         {
             FilterPreset preset = filterChoice.getSelectionModel().getSelectedItem();
-            
-            if(preset != null)
+
+            if (preset != null)
             {
                 filterOptionPane.setContent(preset.getFilterSettingsPane());
             }
@@ -318,87 +388,84 @@ public class MainController
     @FXML
     void applyFilterOnAction(ActionEvent event)
     {
-        if(filterOptionPane.getContent() != null)
+        if (filterOptionPane.getContent() != null)
         {
             FilterSettingsPane filterSettings = (FilterSettingsPane) filterOptionPane.getContent();
-            
+
             try
             {
                 Filter filter = filterSettings.generateFilter();
 
                 tableViewResource.getItems().clear();
-                
-                System.out.println(filter);
-                
-                if(filter == null)
+
+                if (filter == null)
                 {
-                    //get without filter, this is faster
+                    // get without filter, this is faster
                     tableViewResource.getItems().addAll(application.getEditor().getResources());
                 }
                 else
                 {
-                    System.out.println("filtered!");
                     tableViewResource.getItems().addAll(application.getEditor().getResources(filter));
                 }
-            } 
+            }
             catch (FilterSettingsException e)
             {
-                Utils.showError("Invalid filter setting", e.getMessage(), 
-                        application.getPrimaryStage());
+                Utils.showError(Messages.get("Msg.Error.Filter.InvalidSetting.Header"), //$NON-NLS-1$
+                        e.getMessage(), application.getPrimaryStage());
             }
         }
     }
 
     @FXML
-    void addFilterOnAction(ActionEvent event) 
+    void addFilterOnAction(ActionEvent event)
     {
         AddFilterDialog dialog = new AddFilterDialog(application, loadedFilters);
-        
+
         dialog.showAndWait();
-        
-        if(!(dialog.getFilter() == null))
+
+        if (!(dialog.getFilter() == null))
         {
             loadedFilters.add(dialog.getFilter());
-            
-            //add to config file
-            dialog.getFilter().addToJSON(configFile.getJSONArray(CONFIG_KEY_FILTER)); 
-            
-            //select last added filter preset
+
+            // add to config file
+            dialog.getFilter().addToJSON(configFile.getJSONArray(CONFIG_KEY_FILTER));
+
+            // select last added filter preset
             filterChoice.getSelectionModel().select(loadedFilters.size() - 1);
         }
     }
 
     @FXML
-    void removeFilterOnAction(ActionEvent event) 
+    void removeFilterOnAction(ActionEvent event)
     {
-        if(filterChoice.getSelectionModel().getSelectedIndex() == 0)
+        if (filterChoice.getSelectionModel().getSelectedIndex() == 0)
         {
-            Utils.showError("Can not remove filter", 
-                    "This filter can not be removed.", 
+            Utils.showError(Messages.get("Msg.Error.Filter.CanNotRemoveDefault.Header"), //$NON-NLS-1$
+                    Messages.get("Msg.Error.Filter.CanNotRemoveDefault.Body"), //$NON-NLS-1$
                     application.getPrimaryStage());
-            
+
             return;
         }
-        
+
         FilterPreset filter = filterChoice.getSelectionModel().getSelectedItem();
-        
+
         filterChoice.getItems().remove(filter);
 
         JSONArray filterArray = configFile.getJSONArray(CONFIG_KEY_FILTER);
-        
-        //remove filter by name (names are unique)
-        for(Iterator<Object> i = filterArray.iterator(); i.hasNext();)
+
+        // remove filter by name (names are unique)
+        for (Iterator<Object> i = filterArray.iterator(); i.hasNext();)
         {
             Object object = i.next();
-            
-            if(object instanceof JSONObject)
+
+            if (object instanceof JSONObject)
             {
-                String name = ((JSONObject)object).getString(FilterPreset.FILTER_NAME);
-                
-                if(filter.getName().equals(name))
+                String name = ((JSONObject) object).getString(FilterPreset.FILTER_NAME);
+
+                if (filter.getName().equals(name))
                 {
                     i.remove();
-                    return; //there can't be another filter, names are unique
+                    return; // there can't be another filter, names are unique
                 }
             }
         }
@@ -407,7 +474,7 @@ public class MainController
     @FXML
     void addResource(ActionEvent event)
     {
-        if(checkIfLoadedAndShow())
+        if (checkIfLoadedAndShow())
         {
             AddResourceController.show(application);
         }
@@ -416,7 +483,7 @@ public class MainController
     @FXML
     void addType(ActionEvent event)
     {
-        if(checkIfLoadedAndShow())
+        if (checkIfLoadedAndShow())
         {
             AddTypeController.show(application);
         }
@@ -425,7 +492,7 @@ public class MainController
     @FXML
     void addGroup(ActionEvent event)
     {
-        if(checkIfLoadedAndShow())
+        if (checkIfLoadedAndShow())
         {
             AddGroupController.show(application);
         }
@@ -434,11 +501,11 @@ public class MainController
     @FXML
     void editResource(ActionEvent event)
     {
-        if(checkIfLoadedAndShow())
+        if (checkIfLoadedAndShow())
         {
             Resource resource = tableViewResource.getSelectionModel().getSelectedItem();
-            
-            if(resource != null)
+
+            if (resource != null)
                 ResourceDetailsController.show(application, resource);
         }
     }
@@ -446,11 +513,11 @@ public class MainController
     @FXML
     void editType(ActionEvent event)
     {
-        if(checkIfLoadedAndShow())
+        if (checkIfLoadedAndShow())
         {
             Type type = tableViewType.getSelectionModel().getSelectedItem();
-            
-            if(type != null)
+
+            if (type != null)
                 EditTypeController.show(application, type);
         }
     }
@@ -458,19 +525,32 @@ public class MainController
     @FXML
     void editGroup(ActionEvent event)
     {
-        if(checkIfLoadedAndShow())
+        if (checkIfLoadedAndShow())
         {
             Group group = tableViewGroup.getSelectionModel().getSelectedItem();
-            
-            if(group != null)
+
+            if (group != null)
                 EditGroupController.show(application, group);
         }
     }
-    
+
     @FXML
     void fileNewOnAction(ActionEvent event)
     {
-        
+        FileChooser fileChooser = new FileChooser();
+
+        fileChooser.setTitle(Messages.get("MainController.FileChooser.New.Title")); //$NON-NLS-1$
+        fileChooser
+                .setInitialFileName(Messages.get("MainController.FileChooser.New.InitFilename")); //$NON-NLS-1$
+        fileChooser.setInitialDirectory(new File(System.getProperty("user.dir"))); //$NON-NLS-1$
+
+        File database = fileChooser.showOpenDialog(application.getPrimaryStage());
+
+        if (database != null) // check if a file was actually chosen
+        {
+            addRecentFilesEntry(database);
+            registerNewEditor(database);
+        }
     }
 
     @FXML
@@ -478,16 +558,17 @@ public class MainController
     {
         FileChooser fileChooser = new FileChooser();
 
-        fileChooser.setTitle("Open database");
-        fileChooser.setInitialFileName("NostraResourceDB.db");
-        fileChooser.setInitialDirectory(new File(System.getProperty("user.dir")));
+        fileChooser.setTitle(Messages.get("MainController.FileChooser.Open.Title")); //$NON-NLS-1$
+        fileChooser.setInitialFileName(Messages.get("MainController.FileChooser.Open.InitFilename")); //$NON-NLS-1$
+        fileChooser.setInitialDirectory(new File(System.getProperty("user.dir"))); //$NON-NLS-1$
 
         File database = fileChooser.showOpenDialog(application.getPrimaryStage());
 
         if (database != null) // check if a file was actually chosen
         {
             addRecentFilesEntry(database);
-            registerEditor(database);
+
+            registerExistingEditor(database);
         }
     }
 
@@ -508,16 +589,18 @@ public class MainController
     @FXML
     void removeResource(ActionEvent event)
     {
-        if(checkIfLoadedAndShow())
+        if (checkIfLoadedAndShow())
         {
             Resource resource = tableViewResource.getSelectionModel().getSelectedItem();
-            
-            if(resource != null)
+
+            if (resource != null)
             {
                 boolean success = application.getEditor().removeResource(resource);
-                
-                if(!success)
-                    Utils.showError("Error removing resource", "Could not remove type.", application.getPrimaryStage());
+
+                if (!success)
+                    Utils.showError(Messages.get("Msg.Error.Resource.CanNotRemove.Header"), //$NON-NLS-1$
+                            Messages.get("Msg.Error.Resource.CanNotRemove.Body"), //$NON-NLS-1$
+                            application.getPrimaryStage());
             }
         }
     }
@@ -525,16 +608,18 @@ public class MainController
     @FXML
     void removeType(ActionEvent event)
     {
-        if(checkIfLoadedAndShow())
+        if (checkIfLoadedAndShow())
         {
             Type type = tableViewType.getSelectionModel().getSelectedItem();
-            
-            if(type != null)
+
+            if (type != null)
             {
                 boolean success = application.getEditor().removeType(type);
-                
-                if(!success)
-                    Utils.showError("Error removing type", "Could not remove type, is it still in use?", application.getPrimaryStage());
+
+                if (!success)
+                    Utils.showError(Messages.get("Msg.Error.Type.CanNotRemove.Header"), //$NON-NLS-1$
+                            Messages.get("Msg.Error.Type.CanNotRemove.Body"), //$NON-NLS-1$
+                            application.getPrimaryStage());
             }
         }
     }
@@ -542,16 +627,18 @@ public class MainController
     @FXML
     void removeGroup(ActionEvent event)
     {
-        if(checkIfLoadedAndShow())
+        if (checkIfLoadedAndShow())
         {
             Group group = tableViewGroup.getSelectionModel().getSelectedItem();
-            
-            if(group != null)
+
+            if (group != null)
             {
                 boolean success = application.getEditor().removeGroup(group);
-                
-                if(!success)
-                    Utils.showError("Error removing group", "Could not remove group, is it still in use?", application.getPrimaryStage());
+
+                if (!success)
+                    Utils.showError(Messages.get("Msg.Error.Group.CanNotRemove.Header"), //$NON-NLS-1$
+                            Messages.get("Msg.Error.Group.CanNotRemove.Body"), //$NON-NLS-1$
+                            application.getPrimaryStage());
             }
         }
     }
@@ -560,7 +647,19 @@ public class MainController
     {
         if (checkIfLoaded())
         {
-            registerEditor(new File(application.getEditor().getDatabase().getPath()));
+            if (!application.saveConfigFile())
+                Utils.showError(Messages.get("Msg.Error.Config.SaveError.Header"), //$NON-NLS-1$
+                        Messages.get("Msg.Error.Config.SaveError.Body"), //$NON-NLS-1$
+                        application.getPrimaryStage());
+
+//            try
+//            {
+//                registerEditor(new Editor(application.getEditor().getDatabase().getPath()));
+//            } 
+//            catch (SQLException e)
+//            {
+//                e.printStackTrace();
+//            }
         }
     }
 
@@ -573,7 +672,9 @@ public class MainController
     {
         if (!checkIfLoaded())
         {
-            Utils.showError("No Database opened", "No datbase is currently opened.", application.getPrimaryStage());
+            Utils.showError(Messages.get("Msg.Error.Database.NotOpened.Header"), //$NON-NLS-1$
+                    Messages.get("Msg.Error.Database.NotOpened.Body"), //$NON-NLS-1$
+                    application.getPrimaryStage());
 
             return false;
         }
@@ -586,20 +687,21 @@ public class MainController
         tableViewResource.getItems().clear();
         tableViewType.getItems().clear();
         tableViewGroup.getItems().clear();
-        
-        if(application.getEditor() == null)
+
+        if (application.getEditor() == null)
             return true;
-        
+
         try
         {
             application.getEditor().close();
             application.setEditor(null);
-            
+
             return true;
-        } 
+        }
         catch (IOException e)
         {
-            Utils.showError("Database could not be saved", e.getMessage(), application.getPrimaryStage());
+            Utils.showError(Messages.get("Msg.Error.Database.CanNotSave.Header"), e.getMessage(), //$NON-NLS-1$
+                    application.getPrimaryStage());
 
             return false;
         }
@@ -608,44 +710,82 @@ public class MainController
     private void addRecentFilesEntry(File file)
     {
         JSONArray recent = configFile.getJSONArray(CONFIG_KEY_RECENT);
-        
-        //remove entry if the file is already in it - this way it will be added at the top
+
+        // remove entry if the file is already in it - this way it will be added at the
+        // top
         {
-            for(Iterator<Object> i = recent.iterator(); i.hasNext();)
+            for (Iterator<Object> i = recent.iterator(); i.hasNext();)
             {
                 Object object = i.next();
-                
-                if(object instanceof String)
+
+                if (object instanceof String)
                 {
-                    if(((String)object).equals(file.getAbsolutePath()))
+                    if (((String) object).equals(file.getAbsolutePath()))
                     {
                         i.remove();
                     }
                 }
             }
         }
-        
-        if(recent.length() >= 10)
+
+        if (recent.length() >= 10)
         {
             recent.remove(0);
         }
-        
+
         recent.put(recent.length(), file.getAbsolutePath());
-        
+
         reloadRecentlyOpened();
     }
-    
-    private void registerEditor(File database)
+
+    private void registerNewEditor(File file)
     {
-        if(!database.exists())
+        try
         {
-            Utils.showError("Database does not exist", 
-                    String.format("The file \"%s\" does not exist.", 
-                            database.getAbsolutePath()), application.getPrimaryStage());
-            
-            return;
+            registerEditor(Editor.newDatabase(file));
         }
-        
+        catch (AccessDeniedException e)
+        {
+            e.printStackTrace();
+            Utils.showError(Messages.get("Msg.Error.Database.CanNotCreateFile.Header"), //$NON-NLS-1$
+                    e.getMessage(), application.getPrimaryStage());
+        }
+        catch (FileAlreadyExistsException e)
+        {
+            e.printStackTrace();
+            Utils.showError(Messages.get("Msg.Error.Database.CanNotLoad.Header"), e.getMessage(), //$NON-NLS-1$
+                    application.getPrimaryStage());
+        }
+        catch (SQLException e)
+        {
+            e.printStackTrace();
+            Utils.showError(Messages.get("Msg.Error.Database.CanNotCreateDB.Header"), //$NON-NLS-1$
+                    e.getMessage(), application.getPrimaryStage());
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+            Utils.showError(Messages.get("Msg.Error.Database.CanNotCreateFile.Header"), //$NON-NLS-1$
+                    e.getMessage(), application.getPrimaryStage());
+        }
+    }
+
+    private void registerExistingEditor(File file)
+    {
+        try
+        {
+            registerEditor(new Editor(file));
+        }
+        catch (SQLException e)
+        {
+            Utils.showError(Messages.get("Msg.Error.Database.CanNotLoad.Header"), e.getMessage(), //$NON-NLS-1$
+                    application.getPrimaryStage());
+            application.setEditor(null);
+        }
+    }
+
+    private void registerEditor(Editor editor)
+    {
         // true by default, because if the editor does not need to be closed there is no
         // problem either way
         boolean couldClose = true;
@@ -656,36 +796,31 @@ public class MainController
         if (!couldClose)
             return;
 
-        try
-        {
-            application.setEditor(new Editor(database));
-            
-            //add the resources/groups/types
-            tableViewResource.getItems().addAll(application.getEditor().getResources());
-            tableViewGroup.getItems().addAll(application.getEditor().getGroups());
-            tableViewType.getItems().addAll(application.getEditor().getTypes());
-            
-            //register add/edit/remove events
-            application.getEditor().getResourceAddEvents().add(resource -> tableViewResource.getItems().add(resource));
-            application.getEditor().getResourceEditEvents().add(type -> tableViewResource.refresh());
-            application.getEditor().getResourceRemoveEvents().add(id -> tableViewResource.getItems().removeIf(resource -> resource.getId() == id));
-            
-            application.getEditor().getTypeAddEvents().add(type -> tableViewType.getItems().add(type));
-            application.getEditor().getTypeEditEvents().add(type -> tableViewType.refresh());
-            application.getEditor().getTypeRemoveEvents().add(id -> tableViewType.getItems().removeIf(type -> type.getId() == id));
-            
-            application.getEditor().getGroupAddEvents().add(group -> tableViewGroup.getItems().add(group));
-            application.getEditor().getGroupEditEvents().add(type -> tableViewGroup.refresh());
-            application.getEditor().getGroupRemoveEvents().add(id -> tableViewGroup.getItems().removeIf(group -> group.getId() == id));
-        
-        } 
-        catch (SQLException e)
-        {
-            Utils.showError("Could not load database", e.getMessage(), application.getPrimaryStage());
-            application.setEditor(null);
-        }
+        application.setEditor(editor);
+
+        // add the resources/groups/types
+        tableViewResource.getItems().addAll(application.getEditor().getResources());
+        tableViewGroup.getItems().addAll(application.getEditor().getGroups());
+        tableViewType.getItems().addAll(application.getEditor().getTypes());
+
+        // register add/edit/remove events
+        application.getEditor().getResourceAddEvents()
+                .add(resource -> tableViewResource.getItems().add(resource));
+        application.getEditor().getResourceEditEvents().add(type -> tableViewResource.refresh());
+        application.getEditor().getResourceRemoveEvents()
+                .add(id -> tableViewResource.getItems().removeIf(resource -> resource.getId() == id));
+
+        application.getEditor().getTypeAddEvents().add(type -> tableViewType.getItems().add(type));
+        application.getEditor().getTypeEditEvents().add(type -> tableViewType.refresh());
+        application.getEditor().getTypeRemoveEvents()
+                .add(id -> tableViewType.getItems().removeIf(type -> type.getId() == id));
+
+        application.getEditor().getGroupAddEvents().add(group -> tableViewGroup.getItems().add(group));
+        application.getEditor().getGroupEditEvents().add(type -> tableViewGroup.refresh());
+        application.getEditor().getGroupRemoveEvents()
+                .add(id -> tableViewGroup.getItems().removeIf(group -> group.getId() == id));
     }
-    
+
     public JSONObject getConfigFile()
     {
         return configFile;

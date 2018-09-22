@@ -31,26 +31,26 @@ public class AddResourceController
     {
         try
         {
-            FXMLLoader loader = new FXMLLoader(AddResourceController.class.getClassLoader().getResource("AddResource.fxml"));
-            
+            FXMLLoader loader = new FXMLLoader(ResourceLoader.getUrl("AddResource.fxml"));
+
             Parent parent = loader.load();
             AddResourceController controller = loader.getController();
             controller.lateInit(application);
-            
+
             Scene scene = new Scene(parent);
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.initOwner(application.getPrimaryStage());
-            stage.setTitle("Add Resource");
+            stage.setTitle(Messages.get("AddResourceController.StageTitle"));
             stage.setScene(scene);
             stage.show();
-        } 
+        }
         catch (IOException e)
         {
             e.printStackTrace();
         }
     }
-    
+
     public void lateInit(ResourceED application)
     {
         this.application = application;
@@ -61,8 +61,8 @@ public class AddResourceController
     @FXML
     void addAndCloseOnAction(ActionEvent event)
     {
-        add();
-        close();
+        if (add())
+            close();
     }
 
     @FXML
@@ -84,21 +84,31 @@ public class AddResourceController
         stage.close();
     }
 
-    private void add()
+    private boolean add()
     {
-        String path = pathResourceText.getText();
-        String cached = cachedResourceText.getText();
+        String path = Utils.nullIfEmpty(pathResourceText.getText());
+        String cached = Utils.nullIfEmpty(cachedResourceText.getText());
 
         if (typeResourceChoice.getValue() == null)
-            Utils.showError("No type", "No type was chosen.", pathResourceText.getScene().getWindow());
+        {
+            Utils.showError(Messages.get("Msg.Error.Type.NothingChosen.Header"),
+                    Messages.get("Msg.Error.Type.NothingChosen.Body"),
+                    pathResourceText.getScene().getWindow());
+            return false;
+        }
         else
         {
             Resource resource = application.getEditor().addResource(path, cached,
                     typeResourceChoice.getValue().getId());
 
             if (resource == null)
-                Utils.showError("Error adding resource", "Resource could not be added.",
+            {
+                Utils.showError(Messages.get("Msg.Error.Resource.CanNotAdd.Header"),
+                        Messages.get("Msg.Error.Resource.CanNotAdd.Body"),
                         pathResourceText.getScene().getWindow());
+                return false;
+            }
+            return true;
         }
     }
 }

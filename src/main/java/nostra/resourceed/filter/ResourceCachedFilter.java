@@ -20,6 +20,6 @@ public class ResourceCachedFilter extends Filter
     @Override
     public String generateSQLImpl()
     {
-        return Resource.SQL_TABLE + "." + Resource.SQL_COL_CACHED + " = '" + cached + "'";
+        return Resource.SQL_TABLE + "." + Resource.SQL_COL_CACHED + " = " + quotedOrNull(cached);
     }
 }

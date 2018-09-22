@@ -20,6 +20,6 @@ public class GroupNameFilter extends Filter
     @Override
     public String generateSQLImpl()
     {
-        return Group.SQL_TABLE + "." + Group.SQL_COL_NAME + " = '" + name + "'";
+        return Group.SQL_TABLE + "." + Group.SQL_COL_NAME + " = " + quotedOrNull(name);
     }
 }

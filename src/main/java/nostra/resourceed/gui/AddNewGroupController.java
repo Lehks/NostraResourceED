@@ -21,31 +21,31 @@ public class AddNewGroupController
     private TextField nameText;
 
     private Resource resource;
-    
+
     public static void show(ResourceED application, Resource resource)
     {
         try
         {
-            FXMLLoader loader = new FXMLLoader(AddNewGroupController.class.getClassLoader().getResource("AddNewGroup.fxml"));
-            
+            FXMLLoader loader = new FXMLLoader(ResourceLoader.getUrl("AddNewGroup.fxml"));
+
             Parent parent = loader.load();
             AddNewGroupController controller = loader.getController();
             controller.lateInit(application, resource);
-            
+
             Scene scene = new Scene(parent);
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.initOwner(application.getPrimaryStage());
-            stage.setTitle("Add Group");
+            stage.setTitle(Messages.get("AddNewGroupController.StageTitle"));
             stage.setScene(scene);
             stage.show();
-        } 
+        }
         catch (IOException e)
         {
             e.printStackTrace();
         }
     }
-    
+
     public void lateInit(ResourceED application, Resource resource)
     {
         this.application = application;
@@ -80,13 +80,13 @@ public class AddNewGroupController
 
     private void add()
     {
-        String name = nameText.getText();
-        
+        String name = Utils.nullIfEmpty(nameText.getText());
+
         Group group = application.getEditor().addGroup(name);
 
         if (group == null)
-            Utils.showError("Error adding group", "Group could not be added.",
-                    nameText.getScene().getWindow());
+            Utils.showError(Messages.get("Msg.Error.Group.CanNotAdd.Header"),
+                    Messages.get("Msg.Error.Group.CanNotAdd.Body"), nameText.getScene().getWindow());
         else
         {
             group.addMember(resource);

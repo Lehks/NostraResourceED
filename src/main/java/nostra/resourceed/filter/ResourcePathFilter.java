@@ -20,6 +20,6 @@ public class ResourcePathFilter extends Filter
     @Override
     public String generateSQLImpl()
     {
-        return Resource.SQL_TABLE + "." + Resource.SQL_COL_PATH + " = '" + path + "'";
+        return Resource.SQL_TABLE + "." + Resource.SQL_COL_PATH + " = " + quotedOrNull(path);
     }
 }

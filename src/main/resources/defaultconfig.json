@@ -2,5 +2,29 @@
   "recent": [
   ],
   "filters": [
+  	{
+  		"name": "Type Name",
+  		"data": [
+  			"TYPE_NAME"
+  		]
+  	},
+  	{
+  		"name": "Group Name",
+  		"data": [
+  			"GROUP_NAME"
+  		]
+  	},
+  	{
+  		"name": "Type ID",
+  		"data": [
+  			"TYPE_ID"
+  		]
+  	},
+  	{
+  		"name": "Group ID",
+  		"data": [
+  			"GROUP_ID"
+  		]
+  	}
   ]
 }

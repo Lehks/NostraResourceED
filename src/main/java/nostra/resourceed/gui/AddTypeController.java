@@ -19,30 +19,33 @@ public class AddTypeController
     @FXML
     private TextField nameText;
 
+    @FXML
+    private TextField descriptionText;
+
     public static void show(ResourceED application)
     {
         try
         {
-            FXMLLoader loader = new FXMLLoader(AddTypeController.class.getClassLoader().getResource("AddType.fxml"));
-            
+            FXMLLoader loader = new FXMLLoader(ResourceLoader.getUrl("AddType.fxml"));
+
             Parent parent = loader.load();
             AddTypeController controller = loader.getController();
             controller.lateInit(application);
-            
+
             Scene scene = new Scene(parent);
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.initOwner(application.getPrimaryStage());
-            stage.setTitle("Add Type");
+            stage.setTitle(Messages.get("AddTypeController.StageTitle"));
             stage.setScene(scene);
             stage.show();
-        } 
+        }
         catch (IOException e)
         {
             e.printStackTrace();
         }
     }
-    
+
     public void lateInit(ResourceED application)
     {
         this.application = application;
@@ -51,8 +54,8 @@ public class AddTypeController
     @FXML
     void addAndCloseOnAction(ActionEvent event)
     {
-        add();
-        close();
+        if(add());
+            close();
     }
 
     @FXML
@@ -74,14 +77,21 @@ public class AddTypeController
         stage.close();
     }
 
-    private void add()
+    private boolean add()
     {
-        String name = nameText.getText();
-        
-        Type type = application.getEditor().addType(name);
+        String name = Utils.nullIfEmpty(nameText.getText());
+        String description = Utils.nullIfEmpty(descriptionText.getText());
+
+        Type type = application.getEditor().addType(name, description);
 
         if (type == null)
-            Utils.showError("Error adding type", "Type could not be added.",
-                    nameText.getScene().getWindow());
+        {
+            Utils.showError(Messages.get("Msg.Error.Type.CanNotAdd.Header"),
+                    Messages.get("Msg.Error.Type.CanNotAdd.Body"), nameText.getScene().getWindow());
+            
+            return false;
+        }
+        else
+            return true;
     }
 }

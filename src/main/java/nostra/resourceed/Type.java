@@ -6,12 +6,21 @@ import java.sql.SQLException;
 public class Type
 {
     /** Represents the Type table name inside the database. */
-    public static final String SQL_TABLE = "resourceType";
+    public static final String SQL_TABLE = "Types";
     /** Represents the Type Id column name inside the database. */
-    public static final String SQL_COL_ID = "tid";
+    public static final String SQL_COL_ID = "ID";
     /** Represents the Type Name column name inside the database */
     public static final String SQL_COL_NAME = "name";
 
+    public static final String SQL_COL_DESCRIPTION = "description";
+
+    public static final String SQL_CREATE_TABLE = 
+            "CREATE TABLE IF NOT EXISTS " + SQL_TABLE + "(       " +
+            "   " + SQL_COL_ID          + " INTEGER NOT NULL,    " +
+            "   " + SQL_COL_NAME        + " TEXT NOT NULL UNIQUE," +
+            "   " + SQL_COL_DESCRIPTION + " TEXT,                " +
+            "   PRIMARY KEY(" + SQL_COL_ID + "));";
+    
     private Editor editor;
     
     private final int id;
@@ -69,6 +78,57 @@ public class Type
         
         int affectedRows = builder.update(SQL_TABLE)
                 .set(SQL_COL_NAME, name)
+                .where(SQL_COL_ID, getId())
+                .executeUpdate();
+        
+        if(affectedRows == 1)
+            editor.fireTypeEditEvent(this);
+        
+        return affectedRows == 1; //can never be larger than 1, because selection is done through the primary key
+    }
+
+    public String getDescription()
+    {
+        QueryBuilder builder = new QueryBuilder(editor.getDatabase());
+        
+        ResultSet result = builder.select(SQL_COL_DESCRIPTION)
+                                    .from(SQL_TABLE)
+                                    .where(SQL_COL_ID, getId())
+                                    .executeQuery();
+        
+        try
+        {
+            boolean hasNext = result.next();
+            
+            String ret = null;
+            
+            if(hasNext)
+                ret = result.getString(1);
+            else //this case should never happen if the instance was constructed by Editor.getType()
+                ret = null;
+            
+            result.close();
+            
+            return ret;
+        } 
+        catch (SQLException e)
+        {
+            //should never happen
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    public boolean setDescription(String description)
+    {
+        //TODO: errors like this should be handled by the database, but the interface does not support that yet
+        if(description == null)
+            throw new NullPointerException("The description must not be null.");
+        
+        QueryBuilder builder = new QueryBuilder(editor.getDatabase());
+        
+        int affectedRows = builder.update(SQL_TABLE)
+                .set(SQL_COL_DESCRIPTION, description)
                 .where(SQL_COL_ID, getId())
                 .executeUpdate();
         

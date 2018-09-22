@@ -15,7 +15,7 @@ public class AddFilterDialog extends Stage
     
     public AddFilterDialog(ResourceED owner, List<FilterPreset> filters)
     {
-        FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource("AddFilter.fxml"));
+        FXMLLoader loader = new FXMLLoader(ResourceLoader.getUrl("AddFilter.fxml"));
         
         try
         {
@@ -26,7 +26,7 @@ public class AddFilterDialog extends Stage
             Scene scene = new Scene(root);
             
             setScene(scene);
-            setTitle("Add Filter");
+            setTitle(Messages.get("AddFilterDialog.StageTitle"));
             initModality(Modality.APPLICATION_MODAL);
             initOwner(owner.getPrimaryStage());
         } 

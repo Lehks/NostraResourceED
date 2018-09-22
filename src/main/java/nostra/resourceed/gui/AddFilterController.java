@@ -15,7 +15,7 @@ public class AddFilterController
 
     @FXML
     private TextField nameText;
-    
+
     @FXML
     private CheckBox resourceIDBox;
 
@@ -39,6 +39,9 @@ public class AddFilterController
 
     @FXML
     private CheckBox typeNameBox;
+
+    @FXML
+    private CheckBox typeDescriptionBox;
 
     @FXML
     private CheckBox groupIDBox;
@@ -77,6 +80,9 @@ public class AddFilterController
         if (typeNameBox.isSelected())
             filterTypes.add(FilterType.TYPE_NAME);
 
+        if (typeDescriptionBox.isSelected())
+            filterTypes.add(FilterType.TYPE_DESCRIPTION);
+
         if (groupIDBox.isSelected())
             filterTypes.add(FilterType.GROUP_ID);
 
@@ -89,10 +95,11 @@ public class AddFilterController
         {
             dialog.setFilter(filter);
             dialog.close();
-        } 
+        }
         else
         {
-            Utils.showError("Filter already exists", "A filter with that name already exists.", dialog);
+            Utils.showError(Messages.get("Msg.Error.Filter.AlreadyExists.Header"),
+                    Messages.get("Msg.Error.Filter.AlreadyExists.Body"), dialog);
         }
     }
 

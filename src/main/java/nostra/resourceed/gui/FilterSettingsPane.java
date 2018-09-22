@@ -19,6 +19,7 @@ import nostra.resourceed.filter.ResourceIDFilter;
 import nostra.resourceed.filter.ResourceIsCachedFilter;
 import nostra.resourceed.filter.ResourcePathFileExtensionFilter;
 import nostra.resourceed.filter.ResourcePathFilter;
+import nostra.resourceed.filter.TypeDescriptionFilter;
 import nostra.resourceed.filter.TypeIDFilter;
 import nostra.resourceed.filter.TypeNameFilter;
 
@@ -53,8 +54,6 @@ public class FilterSettingsPane extends VBox
     
     private FilterOptionPane makeFilterOptionPane(FilterPreset.FilterType filterType)
     {
-        System.out.println(filterType);
-        
         switch (filterType)
         {
         case GROUP_ID:
@@ -75,6 +74,8 @@ public class FilterSettingsPane extends VBox
             return new ReadResourcePathPane();
         case TYPE_ID:
             return new ReadTypeIdPane();
+        case TYPE_DESCRIPTION:
+            return new ReadTypeDescriptionPane();
         case TYPE_NAME:
             return new ReadTypeNamePane();
             
@@ -175,7 +176,7 @@ public class FilterSettingsPane extends VBox
 
         public String getValue()
         {
-            return getText();
+            return Utils.nullIfEmpty(getText());
         }
     }
 
@@ -190,7 +191,12 @@ public class FilterSettingsPane extends VBox
         {
             try
             {
-                return Integer.parseInt(getText());
+                String str = Utils.nullIfEmpty(getText());
+                
+                if(str == null)
+                    return null;
+                else
+                    return Integer.parseInt(str);
             }
             catch (NumberFormatException e) 
             {
@@ -322,6 +328,20 @@ public class FilterSettingsPane extends VBox
         public Filter getFilter() throws FilterSettingsException
         {
             return new TypeIDFilter(getValue());
+        }
+    }
+    
+    private class ReadTypeDescriptionPane extends ReadStringPane
+    {
+        public ReadTypeDescriptionPane()
+        {
+            super("Type Description");
+        }
+        
+        @Override
+        public Filter getFilter() throws FilterSettingsException
+        {
+            return new TypeDescriptionFilter(getValue());
         }
     }
     

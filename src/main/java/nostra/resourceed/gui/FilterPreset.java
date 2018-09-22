@@ -137,6 +137,7 @@ public class FilterPreset
         RESOURCE_IS_CACHED("RESOURCE_IS_CACHED"),
         RESOURCE_PATH("RESOURCE_PATH"),
         TYPE_ID("TYPE_ID"),
+        TYPE_DESCRIPTION("TYPE_DESCRIPTION"),
         TYPE_NAME("TYPE_NAME");
         
         private String name;
