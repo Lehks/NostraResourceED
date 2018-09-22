@@ -29,9 +29,9 @@ public class Editor implements Closeable
             "   `" + GROUPS_RESOURCES_SQL_COL_GROUP_ID    + "` INTEGER NOT NULL," + 
             "   PRIMARY KEY(`" + GROUPS_RESOURCES_SQL_COL_RESOURCE_ID + "`, `" + GROUPS_RESOURCES_SQL_COL_GROUP_ID + "`)," + 
             "   FOREIGN KEY(`" + GROUPS_RESOURCES_SQL_COL_RESOURCE_ID 
-                + "`) REFERENCES `" + Resource.SQL_TABLE + "`(`" + Resource.SQL_COL_ID + "`)," +
+                + "`) REFERENCES `" + Resource.SQL_TABLE + "`(`" + Resource.SQL_COL_ID + "`) ON DELETE CASCADE ON UPDATE CASCADE," +
             "   FOREIGN KEY(`" + GROUPS_RESOURCES_SQL_COL_GROUP_ID 
-                + "`) REFERENCES `" + Group.SQL_TABLE + "`(`" + Group.SQL_COL_ID + "`));";
+                + "`) REFERENCES `" + Group.SQL_TABLE + "`(`" + Group.SQL_COL_ID + "`) ON DELETE CASCADE ON UPDATE CASCADE);";
     
     /**
      * The database to edit.

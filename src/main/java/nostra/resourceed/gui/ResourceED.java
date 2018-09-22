@@ -12,6 +12,9 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import nostra.resourceed.Editor;
+import nostra.resourceed.Group;
+import nostra.resourceed.Resource;
+import nostra.resourceed.Type;
 
 public class ResourceED extends Application
 {
@@ -95,6 +98,10 @@ public class ResourceED extends Application
     
     public static void main(String[] args)
     {
+        System.out.println(Type.SQL_CREATE_TABLE);
+        System.out.println(Group.SQL_CREATE_TABLE);
+        System.out.println(Resource.SQL_CREATE_TABLE);
+        System.out.println(Editor.GROUPS_RESOURCES_SQL_CREATE_TABLE);
         launch(args);
     }
 
