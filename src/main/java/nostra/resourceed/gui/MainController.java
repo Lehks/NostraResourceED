@@ -544,7 +544,7 @@ public class MainController
                 .setInitialFileName(Messages.get("MainController.FileChooser.New.InitFilename")); //$NON-NLS-1$
         fileChooser.setInitialDirectory(new File(System.getProperty("user.dir"))); //$NON-NLS-1$
 
-        File database = fileChooser.showOpenDialog(application.getPrimaryStage());
+        File database = fileChooser.showSaveDialog(application.getPrimaryStage());
 
         if (database != null) // check if a file was actually chosen
         {
