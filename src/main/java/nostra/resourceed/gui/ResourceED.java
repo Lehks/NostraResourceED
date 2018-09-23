@@ -98,10 +98,6 @@ public class ResourceED extends Application
     
     public static void main(String[] args)
     {
-        System.out.println(Type.SQL_CREATE_TABLE);
-        System.out.println(Group.SQL_CREATE_TABLE);
-        System.out.println(Resource.SQL_CREATE_TABLE);
-        System.out.println(Editor.GROUPS_RESOURCES_SQL_CREATE_TABLE);
         launch(args);
     }
 
