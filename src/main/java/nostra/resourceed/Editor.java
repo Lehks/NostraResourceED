@@ -16,13 +16,25 @@ import java.util.function.Consumer;
 
 public class Editor implements Closeable
 {
-    /** Represents the Grouped Table name inside the database. */
+    /** 
+     * The name of the GroupsResources table in SQL. 
+     */
     public static final String GROUPS_RESOURCES_SQL_TABLE = "GroupsResources";
-    /** Represents the Grouped ResourceId column name inside the database. */
+    
+    /**
+     * The name of the ResourcesID column GroupsResources table in SQL. 
+     */
     public static final String GROUPS_RESOURCES_SQL_COL_RESOURCE_ID = "ResourcesID";
-    /** Represents the Grouped GroupId column name inside the database. */
+    
+    /**
+     * The name of the GroupsID column GroupsResources table in SQL. 
+     */
     public static final String GROUPS_RESOURCES_SQL_COL_GROUP_ID = "GroupsID";
 
+    /**
+     * The SQL code to create the GroupsResources table.
+     */
+    // @formatter:off
     public static final String GROUPS_RESOURCES_SQL_CREATE_TABLE =
             "CREATE TABLE IF NOT EXISTS `" + GROUPS_RESOURCES_SQL_TABLE + "` (" + 
             "   `" + GROUPS_RESOURCES_SQL_COL_RESOURCE_ID + "` INTEGER NOT NULL," + 
@@ -32,12 +44,14 @@ public class Editor implements Closeable
                 + "`) REFERENCES `" + Resource.SQL_TABLE + "`(`" + Resource.SQL_COL_ID + "`) ON DELETE CASCADE ON UPDATE CASCADE," +
             "   FOREIGN KEY(`" + GROUPS_RESOURCES_SQL_COL_GROUP_ID 
                 + "`) REFERENCES `" + Group.SQL_TABLE + "`(`" + Group.SQL_COL_ID + "`) ON DELETE CASCADE ON UPDATE CASCADE);";
+    // @formatter:on
     
     /**
      * The database to edit.
      */
     private Database database;
     
+    //the lists of registered events
     private List<Consumer<Resource>> resourceAddEvents;
     private List<Consumer<Resource>> resourceEditEvents;
     private List<Consumer<Integer>> resourceRemoveEvents;
@@ -53,6 +67,15 @@ public class Editor implements Closeable
     private List<BiConsumer<Group, Resource>> resourceAddToGroupEvents;
     private List<BiConsumer<Group, Resource>> resourceRemoveFromGroupEvents;
     
+    /**
+     * Creates an editor for a new database.
+     * @param file The database file. Must not exist yet.
+     * @return The constructed editor.
+     * @throws SQLException A database operation failed.
+     * @throws AccessDeniedException The database file (or a required directory) could not be created.
+     * @throws FileAlreadyExistsException The database file already exists.
+     * @throws IOException An I/O error occurred.
+     */
     public static Editor newDatabase(File file) throws SQLException, 
                                                         AccessDeniedException, 
                                                         FileAlreadyExistsException, 
@@ -88,16 +111,31 @@ public class Editor implements Closeable
         return editor;
     }
     
+    /**
+     * Constructs a new editor for an already existing database.
+     * @param databasePath The database file.
+     * @throws SQLException A database operation failed.
+     */
     public Editor(String databasePath) throws SQLException
     {
         this(new Database(databasePath));
     }
-    
+
+    /**
+     * Constructs a new editor for an already existing database.
+     * @param database The database file.
+     * @throws SQLException A database operation failed.
+     */
     public Editor(File database) throws SQLException
     {
         this(database.getAbsolutePath());
     }
-    
+
+    /**
+     * Constructs a new editor for an already existing database.
+     * @param database The database.
+     * @throws SQLException A database operation failed.
+     */
     public Editor(Database database) throws SQLException
     {
         this.database = database;
@@ -120,6 +158,10 @@ public class Editor implements Closeable
         this.resourceRemoveFromGroupEvents = new ArrayList<>();
     }
     
+    /**
+     * Checks if the database has the required tables.
+     * @throws SQLException A database operation failed.
+     */
     private void checkDatabase() throws SQLException
     {
         checkIfTableExists(Resource.SQL_TABLE);
@@ -137,6 +179,11 @@ public class Editor implements Closeable
                 GROUPS_RESOURCES_SQL_COL_RESOURCE_ID);
     }
     
+    /**
+     * Checks if a certain table exists.
+     * @param table The table to check.
+     * @throws SQLException A database operation failed.
+     */
     private void checkIfTableExists(String table) throws SQLException
     {
         PreparedStatement stmt = database.prepQuery("SELECT * FROM sqlite_master WHERE type = 'table' AND name = ?");
@@ -150,6 +197,12 @@ public class Editor implements Closeable
         }
     }
     
+    /**
+     * Checks if a certain column exists in a certain table.
+     * @param table The table to check.
+     * @param columns The column to check.
+     * @throws SQLException A database operation failed.
+     */
     private void checkIfTableHasColumns(String table, String... columns) throws SQLException
     {
         PreparedStatement stmt = database.prepQuery("PRAGMA table_info(" + table + ")");
@@ -171,11 +224,20 @@ public class Editor implements Closeable
         }
     }
     
+    /**
+     * Returns the underlying database.
+     * @return The underlying database.
+     */
     public Database getDatabase()
     {
         return database;
     }
     
+    /**
+     * The resource to get.
+     * @param id The ID of the resource.
+     * @return The resource if it exists, NULL if it does not.
+     */
     public Resource getResource(int id)
     {
         QueryBuilder builder = new QueryBuilder(database);
@@ -209,7 +271,12 @@ public class Editor implements Closeable
             return null;
         }
     }
-    
+
+    /**
+     * The type to get.
+     * @param id The ID of the type.
+     * @return The type if it exists, NULL if it does not.
+     */
     public Type getType(int id)
     {
         QueryBuilder builder = new QueryBuilder(database);
@@ -243,6 +310,11 @@ public class Editor implements Closeable
         }
     }
 
+    /**
+     * The group to get.
+     * @param id The ID of the group.
+     * @return The group if it exists, NULL if it does not.
+     */
     public Group getGroup(int id)
     {
         QueryBuilder builder = new QueryBuilder(database);
@@ -275,7 +347,14 @@ public class Editor implements Closeable
             return null;
         }
     }
-    
+
+    /**
+     * Adds a new resource.
+     * @param path The path of the resource.
+     * @param cached The cache path of the resource.
+     * @param typeId The type of the resource.
+     * @return The added resource, or NULL if it could not be added.
+     */
     public Resource addResource(String path, String cached, int typeId)
     {
         QueryBuilder query = new QueryBuilder(database);
@@ -298,12 +377,25 @@ public class Editor implements Closeable
             return ret;
         }
     }
-    
+
+    /**
+     * Adds a new resource.
+     * @param path The path of the resources.
+     * @param cached The cache path of the resource.
+     * @param type The type of the resource.
+     * @return The added resource, or NULL if it could not be added.
+     */
     public Resource addResource(String path, String cached, Type type)
     {
         return addResource(path, cached, type.getId());
     }
-    
+
+    /**
+     * Adds a new type.
+     * @param name The name of the types.
+     * @param description The description of the type.
+     * @return The added type, or NULL if it could not be added.
+     */
     public Type addType(String name, String description)
     {
         QueryBuilder query = new QueryBuilder(database);
@@ -326,6 +418,11 @@ public class Editor implements Closeable
         }
     }
 
+    /**
+     * Adds a new group.
+     * @param name The name of the group.
+     * @return The added group, or NULL if it could not be added.
+     */
     public Group addGroup(String name)
     {
         QueryBuilder query = new QueryBuilder(database);
@@ -347,6 +444,10 @@ public class Editor implements Closeable
         }
     }
     
+    /**
+     * Returns a list of all resource.
+     * @return The resources.
+     */
     public List<Resource> getResources()
     {
         QueryBuilder builder = new QueryBuilder(database);
@@ -376,6 +477,11 @@ public class Editor implements Closeable
         }
     }
 
+    /**
+     * Returns a list of all resources that match the passed filter.
+     * @param filter The filter to check with.
+     * @return A list of the queried resources.
+     */
     public List<Resource> getResources(Filter filter)
     {
         StringBuilder sql = new StringBuilder();
@@ -448,12 +554,15 @@ public class Editor implements Closeable
         } 
         catch (SQLException e1)
         {
-            // TODO Auto-generated catch block
             e1.printStackTrace();
             return new ArrayList<Resource>();
         }
     }
-    
+
+    /**
+     * Returns a list of all types.
+     * @return The types.
+     */
     public List<Type> getTypes()
     {
         QueryBuilder builder = new QueryBuilder(database);
@@ -482,7 +591,11 @@ public class Editor implements Closeable
             return new ArrayList<Type>();
         }
     }
-    
+
+    /**
+     * Returns a list of all groups.
+     * @return The groups.
+     */
     public List<Group> getGroups()
     {
         QueryBuilder builder = new QueryBuilder(database);
@@ -511,7 +624,12 @@ public class Editor implements Closeable
             return new ArrayList<Group>();
         }
     }
-    
+
+    /**
+     * Removes a resource.
+     * @param resourceId The resource to remove.
+     * @return True, if the resource was removed, false if not.
+     */
     public boolean removeResource(int resourceId)
     {
         QueryBuilder builder = new QueryBuilder(database);
@@ -527,12 +645,22 @@ public class Editor implements Closeable
         
         return affectedRows == 1; //can never be larger than 1, because selection is done through the primary key
     }
-    
+
+    /**
+     * Removes a resource.
+     * @param resource The resource to remove.
+     * @return True, if the resource was removed, false if not.
+     */
     public boolean removeResource(Resource resource)
     {
         return removeResource(resource.getId());
     }
 
+    /**
+     * Removes a type.
+     * @param typeId The resource to remove.
+     * @return True, if the type was removed, false if not.
+     */
     public boolean removeType(int typeId)
     {
         QueryBuilder builder = new QueryBuilder(database);
@@ -548,12 +676,22 @@ public class Editor implements Closeable
         
         return affectedRows == 1; //can never be larger than 1, because selection is done through the primary key
     }
-    
+
+    /**
+     * Removes a type.
+     * @param type The resource to remove.
+     * @return True, if the type was removed, false if not.
+     */
     public boolean removeType(Type type)
     {
         return removeType(type.getId());
     }
 
+    /**
+     * Removes a group.
+     * @param groupId The group to remove.
+     * @return True, if the group was removed, false if not.
+     */
     public boolean removeGroup(int groupId)
     {
         QueryBuilder builder = new QueryBuilder(database);
@@ -569,7 +707,12 @@ public class Editor implements Closeable
         
         return affectedRows == 1; //can never be larger than 1, because selection is done through the primary key
     }
-    
+
+    /**
+     * Removes a group.
+     * @param group The group to remove.
+     * @return True, if the group was removed, false if not.
+     */
     public boolean removeGroup(Group group)
     {
         return removeGroup(group.getId());

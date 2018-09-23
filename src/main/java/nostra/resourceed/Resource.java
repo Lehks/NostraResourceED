@@ -7,17 +7,35 @@ import java.util.List;
 
 public class Resource
 {
-    /** Represents the Resource Table name inside the database. */
+    /** 
+     * The name of the Resources table in SQL. 
+     */
     public static final String SQL_TABLE = "Resources";
-    /** Represents the Resource Id column name inside the database. */
+
+    /**
+     * The name of the ID column Resources table in SQL. 
+     */
     public static final String SQL_COL_ID = "ID";
-    /** Represents the Resource Path column name inside the database. */
+
+    /**
+     * The name of the path column Resources table in SQL. 
+     */
     public static final String SQL_COL_PATH = "path";
-    /** Represents the Resource Cache column name inside the database. */
+
+    /**
+     * The name of the cached column Resources table in SQL. 
+     */
     public static final String SQL_COL_CACHED = "cached";
-    /** Represents the Resource Type column name inside the database.  */
+
+    /**
+     * The name of the TypeID column Resources table in SQL. 
+     */
     public static final String SQL_COL_TYPE = "TypesID";
 
+    /**
+     * The SQL code to create the Resources table.
+     */
+    // @formatter:off
     public final static String SQL_CREATE_TABLE  =
             "CREATE TABLE IF NOT EXISTS `" + SQL_TABLE + "` (" + 
             "   `" + SQL_COL_ID     + "` INTEGER NOT NULL," + 
@@ -26,22 +44,44 @@ public class Resource
             "   `" + SQL_COL_TYPE   + "` INTEGER NOT NULL," + 
             "   PRIMARY KEY(`" + SQL_COL_ID + "`)," + 
             "   FOREIGN KEY(`" + SQL_COL_TYPE + "`) REFERENCES `" + Type.SQL_TABLE + "`(`" + Type.SQL_COL_ID + "`) ON DELETE NO ACTION ON UPDATE CASCADE);";
-    
+    // @formatter:on
+
+    /**
+     * The editor that this resource is in.
+     */
     private Editor editor;
-    
+
+    /**
+     * The ID of the resource.
+     */
     private final int id;
-    
-    public Resource(Editor editor, final int id)
+
+    /**
+     * The constructor. Only used by the library itself and not by a user.
+     * 
+     * @param editor The editor of this resource.
+     * @param id     The ID of this type.
+     */
+    //package private to emulate C++ friends; this constructor should not be used by a user
+    Resource(Editor editor, final int id)
     {
         this.editor = editor;
         this.id = id;
     }
-    
+
+    /**
+     * Returns the ID of this resource.
+     * @return The ID of this resource.
+     */
     public int getId()
     {
         return id;
     }
 
+    /**
+     * Returns the path of this resource.
+     * @return The path of this resource.
+     */
     public String getPath()
     {
         QueryBuilder builder = new QueryBuilder(editor.getDatabase());
@@ -73,13 +113,14 @@ public class Resource
             return null;
         }
     }
-    
+
+    /**
+     * Sets the path of this type.
+     * @param path The new path.
+     * @return True, if the path was successfully set, false if not.
+     */
     public boolean setPath(String path)
     {
-        //TODO: errors like this should be handled by the database, but the interface does not support that yet
-        if(path == null)
-            throw new NullPointerException("The path must not be null.");
-        
         QueryBuilder builder = new QueryBuilder(editor.getDatabase());
         
         int affectedRows = builder.update(SQL_TABLE)
@@ -93,6 +134,10 @@ public class Resource
         return affectedRows == 1; //can never be larger than 1, because selection is done through the primary key
     }
 
+    /**
+     * Returns the cache path of this resource.
+     * @return The cache path of this resource.
+     */
     public String getCache()
     {
         QueryBuilder builder = new QueryBuilder(editor.getDatabase());
@@ -124,13 +169,14 @@ public class Resource
             return null;
         }
     }
-    
+
+    /**
+     * Sets the cache path of this type.
+     * @param cache The new cache path.
+     * @return True, if the cache path was successfully set, false if not.
+     */
     public boolean setCached(String cache)
     {
-        //TODO: errors like this should be handled by the database, but the interface does not support that yet
-        if(cache == null)
-            throw new NullPointerException("The cache must not be null.");
-        
         QueryBuilder builder = new QueryBuilder(editor.getDatabase());
         
         int affectedRows = builder.update(SQL_TABLE)
@@ -144,6 +190,10 @@ public class Resource
         return affectedRows == 1; //can never be larger than 1, because selection is done through the primary key
     }
 
+    /**
+     * Returns the type ID of this resource.
+     * @return The type ID of this resource.
+     */
     public int getTypeId()
     {
         QueryBuilder builder = new QueryBuilder(editor.getDatabase());
@@ -175,12 +225,21 @@ public class Resource
             return 0;
         }
     }
-    
+
+    /**
+     * Returns the type of this resource.
+     * @return The type of this resource.
+     */
     public Type getType()
     {
         return new Type(editor, getTypeId());
     }
-    
+
+    /**
+     * Sets the type ID of this type.
+     * @param typeId The new type ID.
+     * @return True, if the type ID was successfully set, false if not.
+     */
     public boolean setType(int typeId)
     {
         QueryBuilder builder = new QueryBuilder(editor.getDatabase());
@@ -195,17 +254,30 @@ public class Resource
         
         return affectedRows == 1; //can never be larger than 1, because selection is done through the primary key
     }
-    
+
+    /**
+     * Sets the type of this type.
+     * @param type The new type.
+     * @return True, if the type was successfully set, false if not.
+     */
     public boolean setType(Type type)
     {
         return setType(type.getId());
     }
-    
+
+    /**
+     * Returns the editor that this type is in.
+     * @return The editor.
+     */
     public Editor getEditor()
     {
         return editor;
     }
     
+    /**
+     * Returns the groups that this a member of.
+     * @return The groups.
+     */
     public List<Group> getGroups()
     {
         QueryBuilder builder = new QueryBuilder(editor.getDatabase());
@@ -236,6 +308,11 @@ public class Resource
         }
     }
     
+    /**
+     * Adds a resource to a group.
+     * @param groupId The group to add to.
+     * @return True, if the resource was added to the group.
+     */
     public boolean addToGroup(int groupId)
     {
         Group group = editor.getGroup(groupId);
@@ -246,11 +323,21 @@ public class Resource
             return false; //group does not even exist
     }
 
+    /**
+     * Adds a resource to a group.
+     * @param group The group to add to.
+     * @return True, if the resource was added to the group.
+     */
     public boolean addToGroup(Group group)
     {
         return addToGroup(group.getId());
     }
 
+    /**
+     * Removes a resource from a group.
+     * @param groupID The group to remove from.
+     * @return True, if the resource was removed from the group.
+     */
     public boolean removeFromGroup(int groupId)
     {
         Group group = editor.getGroup(groupId);
@@ -261,11 +348,21 @@ public class Resource
             return false; //group does not even exist
     }
 
+    /**
+     * Removes a resource from a group.
+     * @param group The group to remove from.
+     * @return True, if the resource was removed from the group.
+     */
     public boolean removeFromGroup(Group group)
     {
         return removeFromGroup(group.getId());
     }
 
+    /**
+     * Checks if the resource is in a group.
+     * @param groupId The group to check.
+     * @return True, if the resource is part of the passed group, false if not.
+     */
     public boolean isMemberOf(int groupId)
     {
         Group group = editor.getGroup(groupId);
@@ -276,6 +373,11 @@ public class Resource
             return false; //group does not even exist
     }
 
+    /**
+     * Checks if the resource is in a group.
+     * @param group The group to check.
+     * @return True, if the resource is part of the passed group, false if not.
+     */
     public boolean isMemberOf(Group group)
     {
         return isMemberOf(group.getId());

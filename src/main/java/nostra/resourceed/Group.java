@@ -7,34 +7,68 @@ import java.util.List;
 
 public class Group
 {
-    /** Represents the Group Table name inside the database. */
+    /** 
+     * The name of the Groups table in SQL. 
+     */
     public static final String SQL_TABLE = "Groups";
-    /** Represents the Group Id column name inside the database. */
+    
+    /**
+     * The name of the ID column Groups table in SQL. 
+     */
     public static final String SQL_COL_ID = "ID";
-    /** Represents the Group Name column name inside the database. */
+    
+    /** 
+     * The name of the name column Groups table in SQL. 
+    */
     public static final String SQL_COL_NAME = "name";
 
+    /**
+     * The SQL code to create the Groups table.
+     */
+    // @formatter:off
     public static final String SQL_CREATE_TABLE = 
             "CREATE TABLE IF NOT EXISTS " + SQL_TABLE + "(" +
-            "   " + SQL_COL_ID   + " INTEGER NOT NULL,    " +
-            "   " + SQL_COL_NAME + " TEXT NOT NULL UNIQUE," +
-            "   PRIMARY KEY(" + SQL_COL_ID + "));";
-    
+                    SQL_COL_ID   + " INTEGER NOT NULL,    " +
+                    SQL_COL_NAME + " TEXT NOT NULL UNIQUE," +
+                    "PRIMARY KEY(" + SQL_COL_ID + "));";
+    // @formatter:on
+
+    /**
+     * The editor that this group is in.
+     */
     private Editor editor;
-    
+
+    /**
+     * The ID of the group.
+     */
     private final int id;
-    
-    public Group(Editor editor, final int id)
+
+    /**
+     * The constructor. Only used by the library itself and not by a user.
+     * 
+     * @param editor The editor of this type.
+     * @param id     The ID of this type.
+     */
+    //package private to emulate C++ friends; this constructor should not be used by a user
+    Group(Editor editor, final int id)
     {
         this.editor = editor;
         this.id = id;
     }
 
+    /**
+     * Returns the ID of this group.
+     * @return The ID of this group.
+     */
     public int getId()
     {
         return id;
     }
-    
+
+    /**
+     * Returns the name of this group.
+     * @return The name of this group.
+     */
     public String getName()
     {
         QueryBuilder builder = new QueryBuilder(editor.getDatabase());
@@ -66,13 +100,14 @@ public class Group
             return null;
         }
     }
-    
+
+    /**
+     * Sets the name of this group.
+     * @param name The new name.
+     * @return True, if the name was successfully set, false if not.
+     */
     public boolean setName(String name)
     {
-        //TODO: errors like this should be handled by the database, but the interface does not support that yet
-        if(name == null)
-            throw new NullPointerException("The name must not be null.");
-        
         QueryBuilder builder = new QueryBuilder(editor.getDatabase());
                 int affectedRows = builder.update(SQL_TABLE)
                 .set(SQL_COL_NAME, name)
@@ -84,12 +119,20 @@ public class Group
                 
         return affectedRows == 1; //can never be larger than 1, because selection is done through the primary key
     }
-    
+
+    /**
+     * Returns the editor that this type is in.
+     * @return The editor.
+     */
     public Editor getEditor()
     {
         return editor;
     }
-    
+
+    /**
+     * Returns the members of this group.
+     * @return The members.
+     */
     public List<Resource> getMembers()
     {
         QueryBuilder builder = new QueryBuilder(editor.getDatabase());
@@ -120,6 +163,11 @@ public class Group
         }
     }
     
+    /**
+     * Checks if a resource is a member of this group.
+     * @param resourceId The resource to check.
+     * @return True, if the resource is a member, false if not.
+     */
     public boolean isMember(int resourceId)
     {
         QueryBuilder builder = new QueryBuilder(editor.getDatabase());
@@ -161,11 +209,21 @@ public class Group
         }
     }
 
+    /**
+     * Checks if a resource is a member of this group.
+     * @param resource The resource to check.
+     * @return True, if the resource is a member, false if not.
+     */
     public boolean isMember(Resource resource)
     {
         return isMember(resource.getId());
     }
-    
+
+    /**
+     * Removes a resource from a group.
+     * @param resourceId The resource to remove.
+     * @return True, if the resource was removed from the group.
+     */
     public boolean removeMember(int resourceId)
     {
         QueryBuilder builder = new QueryBuilder(editor.getDatabase());
@@ -182,12 +240,22 @@ public class Group
         
         return affectedRows == 1; //can never be larger than 1, because selection is done through the primary key
     }
-    
+
+    /**
+     * Removes a resource from a group.
+     * @param resource The resource to remove.
+     * @return True, if the resource was removed from the group.
+     */
     public boolean removeMember(Resource resource)
     {
         return removeMember(resource.getId());
     }
-    
+
+    /**
+     * Adds a resource to a group.
+     * @param resourceID The resource to add.
+     * @return True, if the resource was added to the group.
+     */
     public boolean addMember(int resourceId)
     {
         QueryBuilder builder = new QueryBuilder(editor.getDatabase());
@@ -203,7 +271,12 @@ public class Group
         
         return affectedRows == 1; //can never be larger than 1, because selection is done through the primary key
     }
-    
+
+    /**
+     * Adds a resource to a group.
+     * @param resource The resource to add.
+     * @return True, if the resource was added to the group.
+     */
     public boolean addMember(Resource resource)
     {
         return addMember(resource.getId());
