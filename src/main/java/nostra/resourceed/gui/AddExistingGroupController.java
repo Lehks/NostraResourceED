@@ -13,13 +13,27 @@ import javafx.stage.Stage;
 import nostra.resourceed.Group;
 import nostra.resourceed.Resource;
 
+/**
+ * The controller for the dialog to add a resource to an existing group.
+ * 
+ * @author Mahan Karimi, Dennis Franz
+ */
 public class AddExistingGroupController
 {
     @FXML
     private ComboBox<Group> groupChoice;
 
+    /**
+     * The resource to add to the group.
+     */
     private Resource resource;
 
+    /**
+     * Opens the dialog.
+     * 
+     * @param application The application that this dialog was opened.
+     * @param resource    The resource to add to the group.
+     */
     public static void show(ResourceED application, Resource resource)
     {
         try
@@ -80,6 +94,7 @@ public class AddExistingGroupController
                     Messages.get("Msg.Error.Group.NoGroupSelected.Body"), groupChoice.getScene().getWindow());
         else if (!group.addMember(resource))
             Utils.showError(Messages.get("Msg.Error.Resource.CanNotAddToGroup.Header"),
-                    Messages.get("Msg.Error.Resource.CanNotAddToGroup.Body"), groupChoice.getScene().getWindow());
+                    Messages.get("Msg.Error.Resource.CanNotAddToGroup.Body"),
+                    groupChoice.getScene().getWindow());
     }
 }

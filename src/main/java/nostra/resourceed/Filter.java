@@ -3,6 +3,13 @@ package nostra.resourceed;
 import java.util.LinkedList;
 import java.util.List;
 
+/**
+ * A class that is the parent class of all filters.
+ * 
+ * This class also implements the logic to concatenate multiple filters.
+ * 
+ * @author Lukas Reichmann
+ */
 public abstract class Filter
 {
     /**
@@ -50,8 +57,9 @@ public abstract class Filter
 
     /**
      * First adds an operator and a regular filter.
+     * 
      * @param operator The operator.
-     * @param filter The filter.
+     * @param filter   The filter.
      * @return The instance that the method was called on.
      */
     private Filter addOperator(Filter operator, Filter filter)
@@ -64,8 +72,9 @@ public abstract class Filter
 
     /**
      * First adds an operator, then a NOT operator and then a regular filter.
+     * 
      * @param operator The operator.
-     * @param filter The filter.
+     * @param filter   The filter.
      * @return The instance that the method was called on.
      */
     private Filter addNotOperator(Filter operator, Filter filter)
@@ -122,7 +131,8 @@ public abstract class Filter
     }
 
     /**
-     * Generatres the SQL statement for this filter.
+     * Generates the SQL statement for this filter.
+     * 
      * @return The SQL statement.
      */
     public String generateSQL()

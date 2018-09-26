@@ -3,28 +3,36 @@ package nostra.resourceed;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+/**
+ * A class that represents a row in the table "Types" in a resource database.
+ * 
+ * This class allows it to edit the columns of that table (using getter and
+ * setter methods).
+ * 
+ * @author Leslie Marxen, Lukas Reichmann
+ */
 public class Type
 {
-    /** 
-     * The name of the Types table in SQL. 
+    /**
+     * The name of the Types table in SQL.
      */
     public static final String SQL_TABLE = "Types";
-    
+
     /**
-     * The name of the ID column Types table in SQL. 
+     * The name of the ID column Types table in SQL.
      */
     public static final String SQL_COL_ID = "ID";
-    
-    /** 
-     * The name of the name column Types table in SQL. 
+
+    /**
+     * The name of the name column Types table in SQL.
      */
     public static final String SQL_COL_NAME = "name";
 
-    /** 
-     * The name of the description column Types table in SQL. 
+    /**
+     * The name of the description column Types table in SQL.
      */
     public static final String SQL_COL_DESCRIPTION = "description";
-    
+
     /**
      * The SQL code to create the Types table.
      */
@@ -63,6 +71,7 @@ public class Type
 
     /**
      * Returns the ID of this type.
+     * 
      * @return The ID of this type.
      */
     public int getId()
@@ -72,6 +81,7 @@ public class Type
 
     /**
      * Returns the name of this type.
+     * 
      * @return The name of this type.
      */
     public String getName()
@@ -107,6 +117,7 @@ public class Type
 
     /**
      * Sets the name of this type.
+     * 
      * @param name The new name.
      * @return True, if the name was successfully set, false if not.
      */
@@ -126,6 +137,7 @@ public class Type
 
     /**
      * Returns the description of this type.
+     * 
      * @return The description of this type.
      */
     public String getDescription()
@@ -161,6 +173,7 @@ public class Type
 
     /**
      * Sets the description of this type.
+     * 
      * @param description The new description.
      * @return True, if the description was successfully set, false if not.
      */
@@ -180,6 +193,7 @@ public class Type
 
     /**
      * Returns the editor that this type is in.
+     * 
      * @return The editor.
      */
     public Editor getEditor()

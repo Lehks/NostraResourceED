@@ -14,6 +14,11 @@ import javafx.stage.Stage;
 import nostra.resourceed.Resource;
 import nostra.resourceed.Type;
 
+/**
+ * The controller for the dialog to add a new resource.
+ * 
+ * @author Mahan Karimi, Dennis Franz
+ */
 public class AddResourceController
 {
     ResourceED application;
@@ -27,6 +32,11 @@ public class AddResourceController
     @FXML
     private ComboBox<Type> typeResourceChoice;
 
+    /**
+     * Opens the dialog.
+     * 
+     * @param application The application that this dialog was opened.
+     */
     public static void show(ResourceED application)
     {
         try

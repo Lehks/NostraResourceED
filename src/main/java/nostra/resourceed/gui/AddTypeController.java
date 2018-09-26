@@ -12,6 +12,11 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import nostra.resourceed.Type;
 
+/**
+ * The controller for the dialog to add a new type.
+ * 
+ * @author Mahan Karimi, Dennis Franz
+ */
 public class AddTypeController
 {
     ResourceED application;
@@ -22,6 +27,11 @@ public class AddTypeController
     @FXML
     private TextField descriptionText;
 
+    /**
+     * Opens the dialog.
+     * 
+     * @param application The application that this dialog was opened.
+     */
     public static void show(ResourceED application)
     {
         try
@@ -54,8 +64,9 @@ public class AddTypeController
     @FXML
     void addAndCloseOnAction(ActionEvent event)
     {
-        if(add());
-            close();
+        if (add())
+            ;
+        close();
     }
 
     @FXML
@@ -88,7 +99,7 @@ public class AddTypeController
         {
             Utils.showError(Messages.get("Msg.Error.Type.CanNotAdd.Header"),
                     Messages.get("Msg.Error.Type.CanNotAdd.Body"), nameText.getScene().getWindow());
-            
+
             return false;
         }
         else

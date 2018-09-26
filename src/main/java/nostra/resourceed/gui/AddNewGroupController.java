@@ -13,6 +13,11 @@ import javafx.stage.Stage;
 import nostra.resourceed.Group;
 import nostra.resourceed.Resource;
 
+/**
+ * The controller for the dialog to add a resource to a new group.
+ * 
+ * @author Mahan Karimi, Dennis Franz
+ */
 public class AddNewGroupController
 {
     ResourceED application;
@@ -20,8 +25,17 @@ public class AddNewGroupController
     @FXML
     private TextField nameText;
 
+    /**
+     * The resource to add to the group.
+     */
     private Resource resource;
 
+    /**
+     * Opens the dialog.
+     * 
+     * @param application The application that this dialog was opened.
+     * @param resource    The resource to add.
+     */
     public static void show(ResourceED application, Resource resource)
     {
         try

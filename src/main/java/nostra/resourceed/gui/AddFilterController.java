@@ -9,6 +9,11 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.TextField;
 import nostra.resourceed.gui.FilterPreset.FilterType;
 
+/**
+ * The controller for the dialog to add a new filter.
+ * 
+ * @author Mahan Karimi, Dennis Franz
+ */
 public class AddFilterController
 {
     private AddFilterDialog dialog;
@@ -49,6 +54,9 @@ public class AddFilterController
     @FXML
     private CheckBox groupNameBox;
 
+    /**
+     * The list that the selected filters will be added to.
+     */
     private List<FilterPreset> filters;
 
     @FXML

@@ -23,35 +23,57 @@ import nostra.resourceed.filter.TypeDescriptionFilter;
 import nostra.resourceed.filter.TypeIDFilter;
 import nostra.resourceed.filter.TypeNameFilter;
 
+/**
+ * A custom window component that allows it to enter values for filters.
+ * 
+ * When added to a window, this pane allows it to enter the values that are
+ * required by a specific filter preset.
+ * 
+ * @author Mahan Karimi, Dennis Franz
+ */
 public class FilterSettingsPane extends VBox
 {
     private List<FilterOptionPane> filterOptions;
-    
+
+    /**
+     * Creates a new instance.
+     * 
+     * @param preset The preset to construct the pane for.
+     */
     public FilterSettingsPane(FilterPreset preset)
     {
         setSpacing(10.0);
-     
+
         filterOptions = new ArrayList<>();
-        
+
         int i = 0;
-        
-        for(FilterPreset.FilterType filterType: preset.getFilterTypes())
+
+        for (FilterPreset.FilterType filterType : preset.getFilterTypes())
         {
             FilterOptionPane pane = makeFilterOptionPane(filterType);
-            
+
             filterOptions.add(pane);
             getChildren().add(pane);
-            
-            //insert separator if not the last pane
-            if(i < (preset.getFilterTypes().size() - 1))
+
+            // insert separator if not the last pane
+            if (i < (preset.getFilterTypes().size() - 1))
             {
                 getChildren().add(new Separator());
             }
-            
+
             i++;
         }
     }
-    
+
+    /**
+     * Returns the component for a particular FilterType.
+     * 
+     * This component allows it to enter the value for the filter of that
+     * FilterType.
+     * 
+     * @param filterType The filter type to return the component for.
+     * @return The component.
+     */
     private FilterOptionPane makeFilterOptionPane(FilterPreset.FilterType filterType)
     {
         switch (filterType)
@@ -78,95 +100,119 @@ public class FilterSettingsPane extends VBox
             return new ReadTypeDescriptionPane();
         case TYPE_NAME:
             return new ReadTypeNamePane();
-            
+
         default:
             return null;
         }
     }
-    
+
+    /**
+     * Generates a concrete filter from the filter preset and the values that are
+     * currently entered in the pane.
+     * 
+     * @return The generated filter; or null if there are no filters in the preset.
+     * @throws FilterSettingsException If the filter could not be created.
+     */
     public Filter generateFilter() throws FilterSettingsException
     {
-        if(filterOptions.size() == 0)
-            return null; //null indicates that there should be no filter
+        if (filterOptions.size() == 0)
+            return null; // null indicates that there should be no filter
         else
         {
             Filter ret = filterOptions.get(0).getFilter();
-            
+
             Iterator<FilterOptionPane> i = filterOptions.iterator();
-            i.next(); //start at index 1
-            
-            while(i.hasNext())
+            i.next(); // start at index 1
+
+            while (i.hasNext())
             {
                 ret.and(i.next().getFilter());
             }
-            
+
             return ret;
         }
     }
-    
+
+    /**
+     * The base class of all components that allow it to enter a single value for a filter.
+     * 
+     * Each of these components allow it to enter the required values for a single filter.
+     */
     private abstract class FilterOptionPane extends VBox
     {
-        public abstract Filter getFilter() throws FilterSettingsException;
-    }
-
-    private abstract class ReadValuePaneBase extends FilterOptionPane
-    {
         private Label label;
-        
-        public ReadValuePaneBase(String title)
+
+        public FilterOptionPane(String title)
         {
             setPadding(new Insets(10, 10, 10, 10));
             setSpacing(10.0);
             label = new Label(title);
-            
+
             getChildren().add(label);
         }
+        
+        /**
+         * Returns the concrete filter (with value).
+         * 
+         * @return The filter.
+         * @throws FilterSettingsException If an exception occurred while making the filter.
+         */
+        public abstract Filter getFilter() throws FilterSettingsException;
     }
-    
-    private abstract class ReadBooleanPane extends ReadValuePaneBase
+
+    /**
+     * A FilterOptionPane that reads a boolean.
+     */
+    private abstract class ReadBooleanPane extends FilterOptionPane
     {
         private ChoiceBox<Boolean> choice;
-        
+
         public ReadBooleanPane(String title)
         {
             super(title);
             choice = new ChoiceBox<>();
             choice.getItems().addAll(true, false);
             choice.setMaxWidth(Double.POSITIVE_INFINITY);
-            
+
             getChildren().add(choice);
         }
-        
+
         public boolean getValue() throws FilterSettingsException
         {
-            if(choice.getValue() != null)
+            if (choice.getValue() != null)
                 return choice.getValue();
             else
                 throw new FilterSettingsException("No item selected");
         }
     }
-    
-    private abstract class ReadTextValuePaneBase extends ReadValuePaneBase
+
+    /**
+     * A FilterOptionPane that reads text.
+     */
+    private abstract class ReadTextValuePaneBase extends FilterOptionPane
     {
         private TextField textField;
-        
+
         public ReadTextValuePaneBase(String title)
         {
             super(title);
-            
+
             textField = new TextField();
             textField.setPromptText(title);
-            //textField.setAlignment(Pos.CENTER_RIGHT);
-            
+            // textField.setAlignment(Pos.CENTER_RIGHT);
+
             getChildren().add(textField);
         }
-        
+
         public String getText()
         {
             return textField.getText();
         }
     }
-    
+
+    /**
+     * A FilterOptionPane that reads a string.
+     */
     private abstract class ReadStringPane extends ReadTextValuePaneBase
     {
         public ReadStringPane(String title)
@@ -180,52 +226,61 @@ public class FilterSettingsPane extends VBox
         }
     }
 
+    /**
+     * A FilterOptionPane that reads in an integer.
+     */
     private abstract class ReadIntegerPane extends ReadTextValuePaneBase
     {
         public ReadIntegerPane(String title)
         {
             super(title);
         }
-        
+
         public Integer getValue() throws FilterSettingsException
         {
             try
             {
                 String str = Utils.nullIfEmpty(getText());
-                
-                if(str == null)
+
+                if (str == null)
                     return null;
                 else
                     return Integer.parseInt(str);
             }
-            catch (NumberFormatException e) 
+            catch (NumberFormatException e)
             {
                 throw new FilterSettingsException(e);
             }
         }
     }
-    
+
+    /**
+     * A FilterOptionPane for the filter GroupIDFilter.
+     */
     private class ReadGroupIdPane extends ReadIntegerPane
     {
         public ReadGroupIdPane()
         {
-            super("Group ID");
+            super(Messages.get("FilterSettingsPane.Titles.GroupID"));
         }
-        
+
         @Override
         public Filter getFilter() throws FilterSettingsException
         {
             return new GroupIDFilter(getValue());
         }
     }
-    
+
+    /**
+     * A FilterOptionPane for the filter GroupNameFilter.
+     */
     private class ReadGroupNamePane extends ReadStringPane
     {
         public ReadGroupNamePane()
         {
-            super("Group Name");
+            super(Messages.get("FilterSettingsPane.Titles.GroupName"));
         }
-        
+
         @Override
         public Filter getFilter() throws FilterSettingsException
         {
@@ -233,13 +288,16 @@ public class FilterSettingsPane extends VBox
         }
     }
 
+    /**
+     * A FilterOptionPane for the filter ResourceCachedFileExtensionFilter.
+     */
     private class ReadResourceCachedFileExtensionPane extends ReadStringPane
     {
         public ReadResourceCachedFileExtensionPane()
         {
-            super("Cached Extension");
+            super(Messages.get("FilterSettingsPane.Titles.CachePathExtension"));
         }
-        
+
         @Override
         public Filter getFilter() throws FilterSettingsException
         {
@@ -247,41 +305,50 @@ public class FilterSettingsPane extends VBox
         }
     }
 
+    /**
+     * A FilterOptionPane for the filter ResourceCachedFilter.
+     */
     private class ReadResourceCachedPane extends ReadStringPane
     {
         public ReadResourceCachedPane()
         {
-            super("Cached");
+            super(Messages.get("FilterSettingsPane.Titles.CachePath"));
         }
-        
+
         @Override
         public Filter getFilter() throws FilterSettingsException
         {
             return new ResourceCachedFilter(getValue());
         }
     }
-    
+
+    /**
+     * A FilterOptionPane for the filter ResourceIsCachedFilter.
+     */
     private class ReadIsCachedPane extends ReadBooleanPane
     {
         public ReadIsCachedPane()
         {
-            super("Is Cached");
+            super(Messages.get("FilterSettingsPane.Titles.IsCached"));
         }
-        
+
         @Override
         public Filter getFilter() throws FilterSettingsException
         {
             return new ResourceIsCachedFilter(getValue());
         }
     }
-    
+
+    /**
+     * A FilterOptionPane for the filter ResourcePathFileExtensionFilter.
+     */
     private class ReadResourcePathFileExtensionPane extends ReadStringPane
     {
         public ReadResourcePathFileExtensionPane()
         {
-            super("Path Extension");
+            super(Messages.get("FilterSettingsPane.Titles.PathExtension"));
         }
-        
+
         @Override
         public Filter getFilter() throws FilterSettingsException
         {
@@ -289,13 +356,16 @@ public class FilterSettingsPane extends VBox
         }
     }
 
+    /**
+     * A FilterOptionPane for the filter ResourcePathFilter.
+     */
     private class ReadResourcePathPane extends ReadStringPane
     {
         public ReadResourcePathPane()
         {
-            super("Path");
+            super(Messages.get("FilterSettingsPane.Titles.Path"));
         }
-        
+
         @Override
         public Filter getFilter() throws FilterSettingsException
         {
@@ -303,55 +373,67 @@ public class FilterSettingsPane extends VBox
         }
     }
 
+    /**
+     * A FilterOptionPane for the filter ResourceIDFilter.
+     */
     private class ReadResourceIdPane extends ReadIntegerPane
     {
         public ReadResourceIdPane()
         {
-            super("Resource ID");
+            super(Messages.get("FilterSettingsPane.Titles.ResourceID"));
         }
-        
+
         @Override
         public Filter getFilter() throws FilterSettingsException
         {
             return new ResourceIDFilter(getValue());
         }
     }
-    
+
+    /**
+     * A FilterOptionPane for the filter TypeIDFilter.
+     */
     private class ReadTypeIdPane extends ReadIntegerPane
     {
         public ReadTypeIdPane()
         {
-            super("Type ID");
+            super(Messages.get("FilterSettingsPane.Titles.TypeID"));
         }
-        
+
         @Override
         public Filter getFilter() throws FilterSettingsException
         {
             return new TypeIDFilter(getValue());
         }
     }
-    
+
+    /**
+     * A FilterOptionPane for the filter TypeDescriptionFilter.
+     */
     private class ReadTypeDescriptionPane extends ReadStringPane
     {
         public ReadTypeDescriptionPane()
         {
-            super("Type Description");
+            super(Messages.get("FilterSettingsPane.Titles.TypeDescription"));
         }
-        
+
         @Override
         public Filter getFilter() throws FilterSettingsException
         {
             return new TypeDescriptionFilter(getValue());
         }
     }
-    
+
+    /**
+     * A FilterOptionPane for the filter TypeNameFilter.
+     */
     private class ReadTypeNamePane extends ReadStringPane
     {
         public ReadTypeNamePane()
         {
-            super("Type Name");
+            super(Messages.get("FilterSettingsPane.Titles.TypeName"));
         }
-        
+
         @Override
         public Filter getFilter() throws FilterSettingsException
         {

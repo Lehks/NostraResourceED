@@ -12,6 +12,11 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import nostra.resourceed.Group;
 
+/**
+ * The controller for the dialog to add a new group.
+ * 
+ * @author Mahan Karimi, Dennis Franz
+ */
 public class AddGroupController
 {
     ResourceED application;
@@ -19,6 +24,11 @@ public class AddGroupController
     @FXML
     private TextField nameText;
 
+    /**
+     * Opens the dialog.
+     * 
+     * @param application The application that this dialog was opened.
+     */
     public static void show(ResourceED application)
     {
         try

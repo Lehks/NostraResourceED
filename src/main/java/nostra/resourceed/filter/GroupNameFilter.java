@@ -3,6 +3,11 @@ package nostra.resourceed.filter;
 import nostra.resourceed.Filter;
 import nostra.resourceed.Group;
 
+/**
+ * A filter that allows it to filter after the group name.
+ * 
+ * @author Lukas Reichmann
+ */
 public class GroupNameFilter extends Filter
 {
     private final String name;
@@ -16,7 +21,7 @@ public class GroupNameFilter extends Filter
     {
         return name;
     }
-    
+
     @Override
     public String generateSQLImpl()
     {

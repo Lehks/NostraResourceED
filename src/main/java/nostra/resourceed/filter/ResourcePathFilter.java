@@ -3,6 +3,11 @@ package nostra.resourceed.filter;
 import nostra.resourceed.Filter;
 import nostra.resourceed.Resource;
 
+/**
+ * A filter that allows it to filter after the (resource) path.
+ * 
+ * @author Lukas Reichmann
+ */
 public class ResourcePathFilter extends Filter
 {
     private final String path;
@@ -16,7 +21,7 @@ public class ResourcePathFilter extends Filter
     {
         return path;
     }
-    
+
     @Override
     public String generateSQLImpl()
     {

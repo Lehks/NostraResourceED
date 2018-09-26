@@ -19,6 +19,11 @@ import nostra.resourceed.Group;
 import nostra.resourceed.Resource;
 import nostra.resourceed.Type;
 
+/**
+ * The controller for the dialog to edit / investigate an existing resource.
+ * 
+ * @author Mahan Karimi, Dennis Franz
+ */
 public class ResourceDetailsController
 {
     ResourceED application;
@@ -43,6 +48,12 @@ public class ResourceDetailsController
 
     private Resource resource;
 
+    /**
+     * Opens the dialog.
+     * 
+     * @param application The application that this dialog was opened.
+     * @param resource    The resource to edit.
+     */
     public static void show(ResourceED application, Resource resource)
     {
         try

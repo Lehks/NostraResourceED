@@ -12,6 +12,11 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import nostra.resourceed.Type;
 
+/**
+ * The controller for the dialog to edit an existing type.
+ * 
+ * @author Mahan Karimi, Dennis Franz
+ */
 public class EditTypeController
 {
     @FXML
@@ -22,6 +27,12 @@ public class EditTypeController
 
     private Type type;
 
+    /**
+     * Opens the dialog.
+     * 
+     * @param application The application that this dialog was opened.
+     * @param type The type to edit.
+     */
     public static void show(ResourceED application, Type type)
     {
         try

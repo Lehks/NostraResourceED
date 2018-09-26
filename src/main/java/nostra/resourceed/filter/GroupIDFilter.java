@@ -3,6 +3,11 @@ package nostra.resourceed.filter;
 import nostra.resourceed.Filter;
 import nostra.resourceed.Group;
 
+/**
+ * A filter that allows it to filter after the group ID.
+ * 
+ * @author Lukas Reichmann
+ */
 public class GroupIDFilter extends Filter
 {
     private final int id;
@@ -16,7 +21,7 @@ public class GroupIDFilter extends Filter
     {
         return id;
     }
-    
+
     @Override
     public String generateSQLImpl()
     {

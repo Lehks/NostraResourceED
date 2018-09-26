@@ -3,6 +3,11 @@ package nostra.resourceed.filter;
 import nostra.resourceed.Filter;
 import nostra.resourceed.Resource;
 
+/**
+ * A filter that allows it to filter after the (resource) cache path.
+ * 
+ * @author Lukas Reichmann
+ */
 public class ResourceCachedFilter extends Filter
 {
     private final String cached;
@@ -16,7 +21,7 @@ public class ResourceCachedFilter extends Filter
     {
         return cached;
     }
-    
+
     @Override
     public String generateSQLImpl()
     {
