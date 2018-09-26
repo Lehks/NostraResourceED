@@ -563,6 +563,8 @@ public class MainController
 	@FXML
 	void fileNewOnAction(ActionEvent event)
 	{
+		closeEditor();
+
 		FileChooser fileChooser = new FileChooser();
 
 		fileChooser
@@ -585,6 +587,8 @@ public class MainController
 	@FXML
 	void fileOpenOnAction(ActionEvent event)
 	{
+		closeEditor();
+
 		FileChooser fileChooser = new FileChooser();
 
 		fileChooser.setTitle(
@@ -672,7 +676,7 @@ public class MainController
 
 			if (group != null)
 			{
-				boolean accept = false;
+				boolean accept = true;
 
 				// warn if there are members in the group left
 				if (group.getMembers().size() > 0)

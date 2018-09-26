@@ -321,7 +321,7 @@ public class FilterSettingsPane extends VBox
     {
         public ReadTypeIdPane()
         {
-            super("Type Id");
+            super("Type ID");
         }
         
         @Override
