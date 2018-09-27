@@ -33,18 +33,19 @@ public abstract class Filter
     }
 
     /**
-     * If the string is null returns "NULL" and if the string is not null returns it
-     * in quotes.
+     * Creates a statement that is similar to "column = string". If, however, string
+     * is NULL, the statement will be "column IS NULL".
      * 
-     * @param string The string to modify.
+     * @param column The column to compare the string to.
+     * @param string The string to compare to.
      * @return The modified string.
      */
-    protected static String quotedOrNull(String string)
+    protected static String isEquals(String column, String string)
     {
-        if (string == null)
-            return "NULL";
+        if (string != null)
+            return column + " = \"" + string + "\"";
         else
-            return "\"" + string + "\"";
+            return column + " IS NULL";
     }
 
     /**

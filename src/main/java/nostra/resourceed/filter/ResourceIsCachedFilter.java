@@ -23,8 +23,8 @@ public class ResourceIsCachedFilter extends Filter
     public String generateSQLImpl()
     {
         if (isCached)
-            return Resource.SQL_TABLE + "." + Resource.SQL_COL_CACHED + " <> NULL";
+            return Resource.SQL_TABLE + "." + Resource.SQL_COL_CACHED + " IS NOT NULL";
         else
-            return Resource.SQL_TABLE + "." + Resource.SQL_COL_CACHED + " = NULL";
+            return Resource.SQL_TABLE + "." + Resource.SQL_COL_CACHED + " IS NULL";
     }
 }

@@ -25,6 +25,6 @@ public class TypeDescriptionFilter extends Filter
     @Override
     public String generateSQLImpl()
     {
-        return Type.SQL_TABLE + "." + Type.SQL_COL_DESCRIPTION + " = " + quotedOrNull(description);
+        return isEquals(Type.SQL_TABLE + "." + Type.SQL_COL_DESCRIPTION, description);
     }
 }

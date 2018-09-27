@@ -92,9 +92,9 @@ public class Editor implements Closeable
         if (file.exists())
             throw new FileAlreadyExistsException(file.toString());
 
-        if (!file.getParentFile().exists())
+        if (!file.getAbsoluteFile().getParentFile().exists())
         {
-            if (!file.getParentFile().mkdirs())
+            if (!file.getAbsoluteFile().getParentFile().mkdirs())
                 throw new AccessDeniedException(file.toString());
         }
 

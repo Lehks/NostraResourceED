@@ -25,6 +25,6 @@ public class TypeNameFilter extends Filter
     @Override
     public String generateSQLImpl()
     {
-        return Type.SQL_TABLE + "." + Type.SQL_COL_NAME + " = " + quotedOrNull(name);
+        return isEquals(Type.SQL_TABLE + "." + Type.SQL_COL_NAME, name);
     }
 }
