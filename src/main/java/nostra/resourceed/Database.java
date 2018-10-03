@@ -8,12 +8,20 @@ import java.sql.SQLException;
 import java.util.Properties;
 
 /**
+ * The database-access backend class.
  * 
  * @author Tobias Kuhn
  */
 public class Database implements Closeable
 {
+    /**
+     * The JDBC database connection.
+     */
     private Connection conn;
+    
+    /**
+     * The path to the database file.
+     */
     private String path;
 
     public Database(String path) throws SQLException
@@ -25,6 +33,12 @@ public class Database implements Closeable
         this.conn = DriverManager.getConnection("jdbc:sqlite:" + path, properties);
     }
 
+    /**
+     * Returns a JDBC prepared statement.
+     *
+     * @param  sql    Initial SQL that should be used in the statement.
+     * @return        Instance of PreparedStatement
+     */
     public PreparedStatement prepQuery(String sql)
     {
         PreparedStatement statement = null;
@@ -57,6 +71,9 @@ public class Database implements Closeable
         return statement;
     }
 
+    /**
+     * Closes the database connection.
+     */
     @Override
     public void close()
     {

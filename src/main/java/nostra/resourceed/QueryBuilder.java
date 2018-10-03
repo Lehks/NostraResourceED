@@ -7,41 +7,79 @@ import java.sql.SQLException;
 import java.sql.ResultSet;
 
 /**
+ * A class that can build SQL queries.
  * 
  * @author Tobias Kuhn
  */
 public class QueryBuilder
 {
+    /**
+     * Query type id's. Used internally.
+     */
     private static final short QUERY_TYPE_INSERT = 8;
     private static final short QUERY_TYPE_SELECT = 4;
     private static final short QUERY_TYPE_UPDATE = 2;
     private static final short QUERY_TYPE_DELETE = 1;
 
+    /**
+     * Statement value data types. Used internally.
+     */
     private static final short QUERY_VALUE_DATA_TYPE_STRING = 1;
     private static final short QUERY_VALUE_DATA_TYPE_INTEGER = 2;
     private static final short QUERY_VALUE_DATA_TYPE_DOUBLE = 4;
 
+    /**
+     * Instance of Database.
+     */
     private Database db;
+    
+    /**
+     * Current query type.
+     */
     private short type;
+    
+    /**
+     * Query limit clause
+     */
     private int limit;
+
+    /**
+     * Query offset clause
+     */
     private int offset;
+
+    /**
+     * Contains the primary key for a new row (after insert query has run)
+     */
     private int insertId;
 
+    /**
+     * Arrays holding the selected tables and columns by the user.
+     */
     private ArrayList<String> affectedColumns;
     private ArrayList<String> affectedTables;
     private ArrayList<String> affectedJoins;
 
+    /**
+     * Arrays holding the filtered columns and values (WHERE... AND)
+     */
     private ArrayList<String> filterColumns;
     private ArrayList<Short> filterDatatypes;
     private ArrayList<String> filterStringValues;
     private ArrayList<Integer> filterIntegerValues;
     private ArrayList<Double> filterDoubleValues;
 
+    /**
+     * Mainly used for UPDATE type of queries. (SET x = y)
+     */
     private ArrayList<Short> affectedColumnDatatypes;
     private ArrayList<String> affectedColumnStringValues;
     private ArrayList<Integer> affectedColumnIntegerValues;
     private ArrayList<Double> affectedColumnDoubleValues;
 
+    /**
+     * Holds the group, order and having clauses
+     */
     private ArrayList<String> groupColumns;
     private ArrayList<String> orderColumns;
     private ArrayList<String> havingColumns;
@@ -72,6 +110,13 @@ public class QueryBuilder
         this.clear();
     }
 
+    /**
+     * Clears all query data.
+     * This method should be called after a query has been executed,
+     * so you can re-use this instance.
+     *
+     * @return QueryBuilder
+     */
     public QueryBuilder clear()
     {
         this.type = 0;
@@ -101,6 +146,14 @@ public class QueryBuilder
         return this;
     }
 
+    /**
+     * Sets the query type to SELECT, and selects the given columns.
+     * Example:
+     * qb.select("colA").select("colB, colC").select("colD")...
+     *
+     * @param col The name of the column(s) to select.
+     * @return QueryBuilder
+     */
     public QueryBuilder select(String col)
     {
         this.type = QUERY_TYPE_SELECT;
@@ -110,6 +163,15 @@ public class QueryBuilder
         return this;
     }
 
+    /**
+     * Sets the query type to SELECT, and selects the given columns.
+     * Example:
+     * String[] str = {"tblA", "tblB", "tblC"};
+     * qb.select(str)...
+     *
+     * @param cols The array of names to select.
+     * @return QueryBuilder
+     */
     public QueryBuilder select(String[] cols)
     {
         for (String col : cols)
@@ -118,6 +180,14 @@ public class QueryBuilder
         return this;
     }
 
+    /**
+     * Selects one or more tables. Used in SELECT and DELETE queries.
+     * Example:
+     * qb.select("colA").from("tableA")
+     *
+     * @param table Table name to select
+     * @return QueryBuilder
+     */
     public QueryBuilder from(String table)
     {
         this.affectedTables.add(table);
@@ -125,6 +195,17 @@ public class QueryBuilder
         return this;
     }
 
+    /**
+     * Filter the query by the given column-value pair.
+     * Example:
+     * qb.select("colA").from("tableA")
+     * .where("colB > ", 20)
+     * .where("colC = ", "test")
+     *
+     * @param column The name and operator of the column to filter
+     * @param value The value of the column. Accepts String, int and Double
+     * @return QueryBuilder
+     */
     public QueryBuilder where(String column, String value)
     {
         if (column.trim().length() == 0)
@@ -139,6 +220,18 @@ public class QueryBuilder
         return this;
     }
 
+
+    /**
+     * Filter the query by the given column-value pair.
+     * Example:
+     * qb.select("colA").from("tableA")
+     * .where("colB > ", 20)
+     * .where("colC = ", "test")
+     *
+     * @param column The name and operator of the column to filter
+     * @param value The value of the column. Accepts String, int and Double
+     * @return QueryBuilder
+     */
     public QueryBuilder where(String column, Integer value)
     {
         if (column.trim().length() == 0)
@@ -153,6 +246,17 @@ public class QueryBuilder
         return this;
     }
 
+    /**
+     * Filter the query by the given column-value pair.
+     * Example:
+     * qb.select("colA").from("tableA")
+     * .where("colB > ", 20)
+     * .where("colC = ", "test")
+     *
+     * @param column The name and operator of the column to filter
+     * @param value The value of the column. Accepts String, int and Double
+     * @return QueryBuilder
+     */
     public QueryBuilder where(String column, Double value)
     {
         if (column.trim().length() == 0)
@@ -167,6 +271,16 @@ public class QueryBuilder
         return this;
     }
 
+    /**
+     * Filter the query by the given expression.
+     * Example:
+     * qb.select("colA").from("tableA")
+     * .where("(fldA = 1 OR fldB = 2)")
+     * .where("colC = ", "test")
+     *
+     * @param column The expression to use as filter
+     * @return QueryBuilder
+     */
     public QueryBuilder where(String column)
     {
         if (column.trim().length() == 0)
@@ -181,6 +295,15 @@ public class QueryBuilder
         return this;
     }
 
+    /**
+     * Adds an inner join to the query.
+     * Example:
+     * qb.select("colA").from("tableA")
+     * .innerJoin("tableB ON x = y")
+     *
+     * @param table The join statement.
+     * @return QueryBuilder
+     */
     public QueryBuilder innerJoin(String table)
     {
         this.affectedJoins.add("INNER JOIN " + table);
@@ -188,6 +311,15 @@ public class QueryBuilder
         return this;
     }
 
+    /**
+     * Adds a left join the query.
+     * Example:
+     * qb.select("colA").from("tableA")
+     * .leftJoin("tableB ON x = y")
+     *
+     * @param table The join statement.
+     * @return QueryBuilder
+     */
     public QueryBuilder leftJoin(String table)
     {
         this.affectedJoins.add("LEFT JOIN " + table);
@@ -195,6 +327,15 @@ public class QueryBuilder
         return this;
     }
 
+    /**
+     * Adds a natural join to the query.
+     * Example:
+     * qb.select("colA").from("tableA")
+     * .naturalJoin("tableB ON x = y")
+     *
+     * @param table The join statement.
+     * @return QueryBuilder
+     */
     public QueryBuilder naturalJoin(String table)
     {
         this.affectedJoins.add("NATURAL JOIN " + table);
@@ -202,6 +343,15 @@ public class QueryBuilder
         return this;
     }
 
+    /**
+     * Adds a right join to the query.
+     * Example:
+     * qb.select("colA").from("tableA")
+     * .rightJoin("tableB ON x = y")
+     *
+     * @param table The join statement.
+     * @return QueryBuilder
+     */
     public QueryBuilder rightJoin(String table)
     {
         this.affectedJoins.add("RIGHT JOIN " + table);
@@ -209,6 +359,15 @@ public class QueryBuilder
         return this;
     }
 
+    /**
+     * Adds a GROUP BY to aggregate queries.
+     * Example:
+     * qb.select("colA").from("tableA")
+     * .groupBy("fieldA")
+     *
+     * @param column The column to group by.
+     * @return QueryBuilder
+     */
     public QueryBuilder groupBy(String column)
     {
         this.groupColumns.add(column);
@@ -216,6 +375,15 @@ public class QueryBuilder
         return this;
     }
 
+    /**
+     * Adds a GROUP BY to aggregate queries.
+     * Example:
+     * qb.select("colA").from("tableA")
+     * .groupBy("fieldA")
+     *
+     * @param columns The array of columns to group by.
+     * @return QueryBuilder
+     */
     public QueryBuilder groupBy(String[] columns)
     {
         for (String col : columns)
@@ -224,6 +392,15 @@ public class QueryBuilder
         return this;
     }
 
+    /**
+     * Adds a ORDER BY statement to the query.
+     * Example:
+     * qb.select("colA").from("tableA")
+     * .orderBy("fieldA ASC")
+     *
+     * @param column The column to order by.
+     * @return QueryBuilder
+     */
     public QueryBuilder orderBy(String column)
     {
         this.orderColumns.add(column);
@@ -231,6 +408,15 @@ public class QueryBuilder
         return this;
     }
 
+    /**
+     * Adds a ORDER BY statement to the query.
+     * Example:
+     * qb.select("colA").from("tableA")
+     * .orderBy("fieldA ASC")
+     *
+     * @param columns The array of columns to order by.
+     * @return QueryBuilder
+     */
     public QueryBuilder orderBy(String[] columns)
     {
         for (String col : columns)
@@ -239,6 +425,15 @@ public class QueryBuilder
         return this;
     }
 
+    /**
+     * Adds a GROUP BY to aggregate queries.
+     * Example:
+     * qb.select("colA").from("tableA")
+     * .groupBy("fieldA")
+     *
+     * @param columnValue The column to group by.
+     * @return QueryBuilder
+     */
     public QueryBuilder having(String columnValue)
     {
         this.havingColumns.add(columnValue);
@@ -246,6 +441,14 @@ public class QueryBuilder
         return this;
     }
 
+    /**
+     * Sets the type of the query to UPDATE
+     * Example:
+     * qb.update("colA") ...
+     *
+     * @param table The table to update.
+     * @return QueryBuilder
+     */
     public QueryBuilder update(String table)
     {
         this.type = QUERY_TYPE_UPDATE;
@@ -256,6 +459,15 @@ public class QueryBuilder
         return this;
     }
 
+    /**
+     * Updates a specific field in an UPDATE query
+     * Example:
+     * qb.update("tableA")set("colA", "valA") ...
+     *
+     * @param column The field to update.
+     * @param value  The value to set.
+     * @return QueryBuilder
+     */
     public QueryBuilder set(String column, String value)
     {
         if (column.trim().length() == 0)
@@ -275,6 +487,15 @@ public class QueryBuilder
         return this;
     }
 
+    /**
+     * Updates a specific field in an UPDATE query
+     * Example:
+     * qb.update("tableA")set("colA", "valA") ...
+     *
+     * @param column The field to update.
+     * @param value  The value to set.
+     * @return QueryBuilder
+     */
     public QueryBuilder set(String column, int value)
     {
         if (column.trim().length() == 0)
@@ -294,6 +515,15 @@ public class QueryBuilder
         return this;
     }
 
+    /**
+     * Updates a specific field in an UPDATE query
+     * Example:
+     * qb.update("tableA")set("colA", "valA") ...
+     *
+     * @param column The field to update.
+     * @param value  The value to set.
+     * @return QueryBuilder
+     */
     public QueryBuilder set(String column, double value)
     {
         if (column.trim().length() == 0)
@@ -325,12 +555,28 @@ public class QueryBuilder
         return this;
     }
 
+    /**
+     * Sets the query type to DELETE
+     * Example:
+     * qb.delete().from("tableA") ...
+     *
+     * @return QueryBuilder
+     */
     public QueryBuilder delete()
     {
         this.type = QUERY_TYPE_DELETE;
         return this;
     }
 
+
+    /**
+     * Sets the type of the query to INSERT
+     * Example:
+     * qb.insert("tableA") ...
+     *
+     * @param table The table to update.
+     * @return QueryBuilder
+     */
     public QueryBuilder insert(String table)
     {
         this.type = QUERY_TYPE_INSERT;
@@ -341,6 +587,16 @@ public class QueryBuilder
         return this;
     }
 
+
+    /**
+     * Sets the limit of the query. Only relevant in
+     * SELECT and DELETE queries.
+     * Example:
+     * qb.select("tableA").limit(10) ...
+     *
+     * @param num The number of rows to return
+     * @return QueryBuilder
+     */
     public QueryBuilder limit(int num)
     {
         this.limit = Math.abs(num);
@@ -348,6 +604,14 @@ public class QueryBuilder
         return this;
     }
 
+    /**
+     * Sets the offset for SELECT and DELETE queries.
+     * Example:
+     * qb.offset("colA") ...
+     *
+     * @param num The desired offset.
+     * @return QueryBuilder
+     */
     public QueryBuilder offset(int num)
     {
         this.offset = Math.abs(num);
@@ -691,6 +955,11 @@ public class QueryBuilder
         }
     }
 
+    /**
+     * Executes the current query and returns the number of affected rows.
+     *
+     * @return Number of affected rows.
+     */
     public int executeUpdate()
     {
         int numAffected = 0;
@@ -713,6 +982,11 @@ public class QueryBuilder
         return numAffected;
     }
 
+    /**
+     * Executes the current query and returns the result set.
+     *
+     * @return Result set from SELECT query.
+     */
     public ResultSet executeQuery()
     {
         ResultSet rs = null;
